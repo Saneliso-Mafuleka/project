@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LogIn, Eye, EyeOff, User, Lock } from 'lucide-react';
+import { RegistrationTopPanel } from './RegistrationTopPanel';
 import { useAuth } from '../../hooks/useAuth';
 import { demoCredentials } from '../../lib/mockData';
 
@@ -37,8 +38,9 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col items-center justify-center p-4">
+      <RegistrationTopPanel onRegisterClick={() => { /* TODO: handle register click */ }} />
+      <div className="max-w-md w-full mt-32">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mb-4">
