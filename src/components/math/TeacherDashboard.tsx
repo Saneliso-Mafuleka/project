@@ -1067,244 +1067,310 @@ export function TeacherDashboard() {
           </div>
         );
       case 'grades':
-        // Grades & Assessment Section (Refined)
-        type GradeEntry = { id: string; student: string; assignment: string; grade: number; };
-        const [grades, setGrades] = useState<GradeEntry[]>([]);
-        const [newGrade, setNewGrade] = useState<Partial<GradeEntry>>({ student: '', assignment: '', grade: undefined });
-        const [editingGradeId, setEditingGradeId] = useState<string | null>(null);
-        const [showGradeModal, setShowGradeModal] = useState(false);
-        const [viewStudent, setViewStudent] = useState<string | null>(null);
-        const [filterStudent, setFilterStudent] = useState('all');
+        // Move all hooks to the top of the component to avoid conditional hook calls
+        return renderGradesAssessment();
+// --- Add at the top level of TeacherDashboard, after other useState hooks ---
+  // Grades & Assessment State (moved to top level)
+  type GradeEntry = { id: string; student: string; assignment: string; grade: number; };
+  const [grades, setGrades] = useState<GradeEntry[]>([]);
+  const [newGrade, setNewGrade] = useState<Partial<GradeEntry>>({ student: '', assignment: '', grade: undefined });
+  const [editingGradeId, setEditingGradeId] = useState<string | null>(null);
+  const [showGradeModal, setShowGradeModal] = useState(false);
+  const [viewStudent, setViewStudent] = useState<string | null>(null);
+  const [filterStudent, setFilterStudent] = useState('all');
 
-        // Handlers
-        const handleGradeInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-          setNewGrade({ ...newGrade, [e.target.name]: e.target.value });
-        };
-        const openAddGrade = () => {
-          setEditingGradeId(null);
-          setNewGrade({ student: '', assignment: '', grade: undefined });
-          setShowGradeModal(true);
-        };
-        const openEditGrade = (g: GradeEntry) => {
-          setEditingGradeId(g.id);
-          setNewGrade(g);
-          setShowGradeModal(true);
-        };
-        const closeGradeModal = () => {
-          setShowGradeModal(false);
-          setEditingGradeId(null);
-          setNewGrade({ student: '', assignment: '', grade: undefined });
-        };
-        const saveGrade = () => {
-          if (!newGrade.student || !newGrade.assignment || newGrade.grade === undefined) return;
-          if (editingGradeId) {
-            setGrades(grades.map(g => g.id === editingGradeId ? { ...g, ...newGrade, id: editingGradeId, grade: Number(newGrade.grade) } as GradeEntry : g));
-          } else {
-            setGrades([...grades, { ...newGrade, id: Date.now().toString(), grade: Number(newGrade.grade) } as GradeEntry]);
-          }
-          closeGradeModal();
-        };
-        const deleteGrade = (id: string) => {
-          setGrades(grades.filter(g => g.id !== id));
-          if (editingGradeId === id) closeGradeModal();
-        };
+  // Grades & Assessment Handlers (move above renderGradesAssessment)
+  const handleGradeInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setNewGrade({ ...newGrade, [e.target.name]: e.target.value });
+  };
+  const openAddGrade = () => {
+    setEditingGradeId(null);
+    setNewGrade({ student: '', assignment: '', grade: undefined });
+    setShowGradeModal(true);
+  };
+  const openEditGrade = (g: GradeEntry) => {
+    setEditingGradeId(g.id);
+    setNewGrade(g);
+    setShowGradeModal(true);
+  };
+  const closeGradeModal = () => {
+    setShowGradeModal(false);
+    setEditingGradeId(null);
+    setNewGrade({ student: '', assignment: '', grade: undefined });
+  };
+  const saveGrade = () => {
+    if (!newGrade.student || !newGrade.assignment || newGrade.grade === undefined) return;
+    if (editingGradeId) {
+      setGrades(grades.map(g => g.id === editingGradeId ? { ...g, ...newGrade, id: editingGradeId, grade: Number(newGrade.grade) } as GradeEntry : g));
+    } else {
+      setGrades([...grades, { ...newGrade, id: Date.now().toString(), grade: Number(newGrade.grade) } as GradeEntry]);
+    }
+    closeGradeModal();
+  };
+  const deleteGrade = (id: string) => {
+    setGrades(grades.filter(g => g.id !== id));
+    if (editingGradeId === id) closeGradeModal();
+  };
+  // CSV Report
+  const downloadCSV = () => {
+    const csv = [
+      ['Student', 'Assignment', 'Grade'],
+      ...grades.map(g => [g.student, g.assignment, g.grade])
+    ].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'grades_report.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  // Progress tracking
+  const studentAverages: { [student: string]: number } = {};
+  grades.forEach(g => {
+    if (!studentAverages[g.student]) studentAverages[g.student] = 0;
+    studentAverages[g.student] += g.grade;
+  });
+  Object.keys(studentAverages).forEach(s => {
+    const count = grades.filter(g => g.student === s).length;
+    studentAverages[s] = count ? (studentAverages[s] / count) : 0;
+  });
+  // Assignment stats
+  const assignmentStats: { [assignment: string]: { count: number; avg: number } } = {};
+  grades.forEach(g => {
+    if (!assignmentStats[g.assignment]) assignmentStats[g.assignment] = { count: 0, avg: 0 };
+    assignmentStats[g.assignment].count++;
+    assignmentStats[g.assignment].avg += g.grade;
+  });
+  Object.keys(assignmentStats).forEach(a => {
+    assignmentStats[a].avg = assignmentStats[a].count ? (assignmentStats[a].avg / assignmentStats[a].count) : 0;
+  });
+  // Filtered grades
+  const gradesToShow = filterStudent === 'all' ? grades : grades.filter(g => g.student === filterStudent);
+  const studentsList = Array.from(new Set(grades.map(g => g.student)));
 
-        // CSV Report
-        const downloadCSV = () => {
-          const csv = [
-            ['Student', 'Assignment', 'Grade'],
-            ...grades.map(g => [g.student, g.assignment, g.grade])
-          ].map(row => row.join(',')).join('\n');
-          const blob = new Blob([csv], { type: 'text/csv' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'grades_report.csv';
-          a.click();
-          URL.revokeObjectURL(url);
-        };
+  // Render function for Grades & Assessment
+  function renderGradesAssessment() {
+    return (
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><Award className="inline w-6 h-6" /> Grades & Assessment</h2>
+        <p className="mb-6 text-gray-600">Grade assignments, track progress, and generate reports</p>
+        <div className="mb-6 flex flex-wrap gap-4 items-center">
+          <button onClick={openAddGrade} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Grade</button>
+          <select value={filterStudent} onChange={e => setFilterStudent(e.target.value)} className="border p-2 rounded">
+            <option value="all">All Students</option>
+            {studentsList.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        {/* Grades Table */}
+        <div className="bg-white p-4 rounded shadow mb-6">
+          <h3 className="font-semibold mb-2">Grades Table</h3>
+          {gradesToShow.length === 0 ? (
+            <p className="text-gray-500">No grades recorded yet.</p>
+          ) : (
+            <table className="w-full text-left border">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2">Student</th>
+                  <th className="p-2">Assignment</th>
+                  <th className="p-2">Grade (%)</th>
+                  <th className="p-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gradesToShow.map(g => (
+                  <tr key={g.id} className="border-t">
+                    <td className="p-2 cursor-pointer text-blue-700 underline" onClick={() => setViewStudent(g.student)}>{g.student}</td>
+                    <td className="p-2">{g.assignment}</td>
+                    <td className="p-2">{g.grade}</td>
+                    <td className="p-2 flex gap-2">
+                      <button onClick={() => openEditGrade(g)} className="px-2 py-1 bg-yellow-200 rounded hover:bg-yellow-300">Edit</button>
+                      <button onClick={() => deleteGrade(g.id)} className="px-2 py-1 bg-red-200 rounded hover:bg-red-300">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        {/* Assignment Stats */}
+        <div className="bg-white p-4 rounded shadow mb-6">
+          <h3 className="font-semibold mb-2">Assignment Statistics</h3>
+          {Object.keys(assignmentStats).length === 0 ? (
+            <p className="text-gray-500">No assignment data yet.</p>
+          ) : (
+            <table className="w-full text-left border">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2">Assignment</th>
+                  <th className="p-2"># Graded</th>
+                  <th className="p-2">Average (%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(assignmentStats).map(([assignment, stat]) => (
+                  <tr key={assignment} className="border-t">
+                    <td className="p-2">{assignment}</td>
+                    <td className="p-2">{stat.count}</td>
+                    <td className="p-2">{stat.avg.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        {/* Progress Tracking */}
+        <div className="bg-white p-4 rounded shadow mb-6">
+          <h3 className="font-semibold mb-2">Progress Tracking</h3>
+          {Object.keys(studentAverages).length === 0 ? (
+            <p className="text-gray-500">No progress data yet.</p>
+          ) : (
+            <table className="w-full text-left border">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2">Student</th>
+                  <th className="p-2">Average Grade (%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(studentAverages).map(([student, avg]) => (
+                  <tr key={student} className="border-t">
+                    <td className="p-2 cursor-pointer text-blue-700 underline" onClick={() => setViewStudent(student)}>{student}</td>
+                    <td className="p-2">{avg.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        {/* Download Report */}
+        <button
+          onClick={downloadCSV}
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Download Grades Report (CSV)
+        </button>
 
-        // Progress tracking
-        const studentAverages: { [student: string]: number } = {};
-        grades.forEach(g => {
-          if (!studentAverages[g.student]) studentAverages[g.student] = 0;
-          studentAverages[g.student] += g.grade;
-        });
-        Object.keys(studentAverages).forEach(s => {
-          const count = grades.filter(g => g.student === s).length;
-          studentAverages[s] = count ? (studentAverages[s] / count) : 0;
-        });
-
-        // Assignment stats
-        const assignmentStats: { [assignment: string]: { count: number; avg: number } } = {};
-        grades.forEach(g => {
-          if (!assignmentStats[g.assignment]) assignmentStats[g.assignment] = { count: 0, avg: 0 };
-          assignmentStats[g.assignment].count++;
-          assignmentStats[g.assignment].avg += g.grade;
-        });
-        Object.keys(assignmentStats).forEach(a => {
-          assignmentStats[a].avg = assignmentStats[a].count ? (assignmentStats[a].avg / assignmentStats[a].count) : 0;
-        });
-
-        // Filtered grades
-        const gradesToShow = filterStudent === 'all' ? grades : grades.filter(g => g.student === filterStudent);
-        const studentsList = Array.from(new Set(grades.map(g => g.student)));
-
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><Award className="inline w-6 h-6" /> Grades & Assessment</h2>
-            <p className="mb-6 text-gray-600">Grade assignments, track progress, and generate reports</p>
-            <div className="mb-6 flex flex-wrap gap-4 items-center">
-              <button onClick={openAddGrade} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Grade</button>
-              <select value={filterStudent} onChange={e => setFilterStudent(e.target.value)} className="border p-2 rounded">
-                <option value="all">All Students</option>
-                {studentsList.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            {/* Grades Table */}
-            <div className="bg-white p-4 rounded shadow mb-6">
-              <h3 className="font-semibold mb-2">Grades Table</h3>
-              {gradesToShow.length === 0 ? (
-                <p className="text-gray-500">No grades recorded yet.</p>
-              ) : (
-                <table className="w-full text-left border">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="p-2">Student</th>
-                      <th className="p-2">Assignment</th>
-                      <th className="p-2">Grade (%)</th>
-                      <th className="p-2">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {gradesToShow.map(g => (
-                      <tr key={g.id} className="border-t">
-                        <td className="p-2 cursor-pointer text-blue-700 underline" onClick={() => setViewStudent(g.student)}>{g.student}</td>
-                        <td className="p-2">{g.assignment}</td>
-                        <td className="p-2">{g.grade}</td>
-                        <td className="p-2 flex gap-2">
-                          <button onClick={() => openEditGrade(g)} className="px-2 py-1 bg-yellow-200 rounded hover:bg-yellow-300">Edit</button>
-                          <button onClick={() => deleteGrade(g.id)} className="px-2 py-1 bg-red-200 rounded hover:bg-red-300">Delete</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-            {/* Assignment Stats */}
-            <div className="bg-white p-4 rounded shadow mb-6">
-              <h3 className="font-semibold mb-2">Assignment Statistics</h3>
-              {Object.keys(assignmentStats).length === 0 ? (
-                <p className="text-gray-500">No assignment data yet.</p>
-              ) : (
-                <table className="w-full text-left border">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="p-2">Assignment</th>
-                      <th className="p-2"># Graded</th>
-                      <th className="p-2">Average (%)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(assignmentStats).map(([assignment, stat]) => (
-                      <tr key={assignment} className="border-t">
-                        <td className="p-2">{assignment}</td>
-                        <td className="p-2">{stat.count}</td>
-                        <td className="p-2">{stat.avg.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-            {/* Progress Tracking */}
-            <div className="bg-white p-4 rounded shadow mb-6">
-              <h3 className="font-semibold mb-2">Progress Tracking</h3>
-              {Object.keys(studentAverages).length === 0 ? (
-                <p className="text-gray-500">No progress data yet.</p>
-              ) : (
-                <table className="w-full text-left border">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="p-2">Student</th>
-                      <th className="p-2">Average Grade (%)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(studentAverages).map(([student, avg]) => (
-                      <tr key={student} className="border-t">
-                        <td className="p-2 cursor-pointer text-blue-700 underline" onClick={() => setViewStudent(student)}>{student}</td>
-                        <td className="p-2">{avg.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-            {/* Download Report */}
-            <button
-              onClick={downloadCSV}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              Download Grades Report (CSV)
-            </button>
-
-            {/* Add/Edit Grade Modal */}
-            {showGradeModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-                <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-                  <h3 className="text-lg font-bold mb-4">{editingGradeId ? 'Edit Grade' : 'Add Grade'}</h3>
-                  <div className="space-y-4">
-                    <input name="student" value={newGrade.student || ''} onChange={handleGradeInputChange} placeholder="Student Name" className="w-full border p-2 rounded" />
-                    <input name="assignment" value={newGrade.assignment || ''} onChange={handleGradeInputChange} placeholder="Assignment" className="w-full border p-2 rounded" />
-                    <input name="grade" type="number" min="0" max="100" value={newGrade.grade === undefined ? '' : newGrade.grade} onChange={handleGradeInputChange} placeholder="Grade (%)" className="w-full border p-2 rounded" />
-                  </div>
-                  <div className="flex justify-end gap-2 mt-6">
-                    <button onClick={closeGradeModal} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
-                    <button onClick={saveGrade} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{editingGradeId ? 'Update' : 'Add'}</button>
-                  </div>
-                </div>
+        {/* Add/Edit Grade Modal */}
+        {showGradeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+              <h3 className="text-lg font-bold mb-4">{editingGradeId ? 'Edit Grade' : 'Add Grade'}</h3>
+              <div className="space-y-4">
+                <input name="student" value={newGrade.student || ''} onChange={handleGradeInputChange} placeholder="Student Name" className="w-full border p-2 rounded" />
+                <input name="assignment" value={newGrade.assignment || ''} onChange={handleGradeInputChange} placeholder="Assignment" className="w-full border p-2 rounded" />
+                <input name="grade" type="number" min="0" max="100" value={newGrade.grade === undefined ? '' : newGrade.grade} onChange={handleGradeInputChange} placeholder="Grade (%)" className="w-full border p-2 rounded" />
               </div>
-            )}
-
-            {/* View Student Results Modal */}
-            {viewStudent && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-                <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-                  <h3 className="text-lg font-bold mb-4">{viewStudent} - Results</h3>
-                  <div className="space-y-2 mb-4">
-                    {grades.filter(g => g.student === viewStudent).length === 0 ? (
-                      <p className="text-gray-500">No results for this student.</p>
-                    ) : (
-                      <table className="w-full text-left border">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="p-2">Assignment</th>
-                            <th className="p-2">Grade (%)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {grades.filter(g => g.student === viewStudent).map(g => (
-                            <tr key={g.id} className="border-t">
-                              <td className="p-2">{g.assignment}</td>
-                              <td className="p-2">{g.grade}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                  <div className="flex justify-end gap-2 mt-6">
-                    <button onClick={() => setViewStudent(null)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Close</button>
-                  </div>
-                </div>
+              <div className="flex justify-end gap-2 mt-6">
+                <button onClick={closeGradeModal} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
+                <button onClick={saveGrade} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{editingGradeId ? 'Update' : 'Add'}</button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Student Results Modal */}
+        {viewStudent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+              <h3 className="text-lg font-bold mb-4">{viewStudent} - Results</h3>
+              <div className="space-y-2 mb-4">
+                {grades.filter(g => g.student === viewStudent).length === 0 ? (
+                  <p className="text-gray-500">No results for this student.</p>
+                ) : (
+                  <table className="w-full text-left border">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="p-2">Assignment</th>
+                        <th className="p-2">Grade (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {grades.filter(g => g.student === viewStudent).map(g => (
+                        <tr key={g.id} className="border-t">
+                          <td className="p-2">{g.assignment}</td>
+                          <td className="p-2">{g.grade}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              <div className="flex justify-end gap-2 mt-6">
+                <button onClick={() => setViewStudent(null)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+      case 'reports':
+        return renderReportsAnalytics();
+  // Reports & Analytics render function (top-level, after grades logic)
+  function renderReportsAnalytics() {
+    // Example analytics: total students, total classes, average grade, class performance breakdown
+    const totalStudents = registeredStudents.length;
+    const totalClasses = classes.length;
+    const totalGrades = grades.length;
+    const avgGrade = totalGrades > 0 ? (grades.reduce((sum, g) => sum + g.grade, 0) / totalGrades) : 0;
+
+    // Class performance: average grade per class
+    const classPerformance: { [className: string]: { count: number; avg: number } } = {};
+    grades.forEach(g => {
+      // Find class for student (assume student name is unique)
+      const student = registeredStudents.find((s: any) => s.fullName === g.student);
+      const className = student?.className || 'Unassigned';
+      if (!classPerformance[className]) classPerformance[className] = { count: 0, avg: 0 };
+      classPerformance[className].count++;
+      classPerformance[className].avg += g.grade;
+    });
+    Object.keys(classPerformance).forEach(cn => {
+      classPerformance[cn].avg = classPerformance[cn].count ? (classPerformance[cn].avg / classPerformance[cn].count) : 0;
+    });
+
+    // Render simple bar chart for class performance (text-based for demo)
+    function renderBarChart(data: { [label: string]: number }, maxBarWidth = 200) {
+      const maxVal = Math.max(...Object.values(data), 1);
+      return (
+        <div className="space-y-2">
+          {Object.entries(data).map(([label, value]) => (
+            <div key={label} className="flex items-center gap-2">
+              <span className="w-32 truncate">{label}</span>
+              <div className="bg-blue-200 h-4 rounded" style={{ width: `${(value / maxVal) * maxBarWidth}px` }} />
+              <span className="text-sm text-gray-700">{value.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><BarChart3 className="inline w-6 h-6" /> Reports & Analytics</h2>
+        <p className="mb-6 text-gray-600">View detailed reports and analytics for your classes.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white p-4 rounded shadow">
+            <h3 className="font-semibold mb-2">Summary</h3>
+            <ul className="space-y-1">
+              <li>Total Students: <span className="font-bold">{totalStudents}</span></li>
+              <li>Total Classes: <span className="font-bold">{totalClasses}</span></li>
+              <li>Average Grade: <span className="font-bold">{avgGrade.toFixed(2)}%</span></li>
+            </ul>
+          </div>
+          <div className="bg-white p-4 rounded shadow">
+            <h3 className="font-semibold mb-2">Class Performance (Avg Grade)</h3>
+            {Object.keys(classPerformance).length === 0 ? (
+              <p className="text-gray-500">No class performance data yet.</p>
+            ) : (
+              renderBarChart(Object.fromEntries(Object.entries(classPerformance).map(([k, v]) => [k, v.avg])))
             )}
           </div>
-        );
-      case 'reports':
-        return renderPlaceholder('Reports & Analytics', 'View detailed reports and analytics for your classes', BarChart3);
+        </div>
+        {/* More analytics can be added here, e.g., student progress, assignment stats, etc. */}
+      </div>
+    );
+  }
       case 'messages':
         return renderPlaceholder('Messages', 'Communicate with students and parents', MessageCircle);
       case 'settings':
