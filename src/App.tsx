@@ -6,6 +6,8 @@ import { StudentApp } from './components/student/StudentApp';
 import { TeacherDashboard } from './components/math/TeacherDashboard';
 import { ConnectionIndicator } from './components/common/ConnectionIndicator';
 
+import { PublicLearningPage } from './components/public/PublicLearningPage';
+
 function App() {
   const { isAuthenticated, user } = useAuth();
   

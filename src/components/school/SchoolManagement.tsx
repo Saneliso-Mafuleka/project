@@ -21,8 +21,40 @@ import { schoolService } from '../../lib/schoolService';
 import { SchoolRegistrationModal } from './SchoolRegistrationModal';
 import { TeacherAccountModal } from './TeacherAccountModal';
 import { PerformanceMonitoringDashboard } from './PerformanceMonitoringDashboard';
+import { UserModal } from '../users/UserModal';
 
 export function SchoolManagement() {
+  // User Management tab rendering
+  // Dropdown state for quick stats
+  const [openStat, setOpenStat] = React.useState<string | null>(null);
+  const renderUserManagement = () => {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-xl font-bold text-gray-900">User Management</h2>
+        <p className="text-gray-600">Manage user accounts for your school</p>
+        <button
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          onClick={() => {
+            setUserModalMode('create');
+            setShowUserModal(true);
+            setUserModalSuccess(false);
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          Add New User
+        </button>
+        {userModalSuccess && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg mt-4">
+            <p className="text-sm text-green-600">User created successfully!</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+  // User modal state for user creation
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [userModalMode, setUserModalMode] = useState<'create' | 'edit'>('create');
+  const [userModalSuccess, setUserModalSuccess] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
   const [schools, setSchools] = useState<School[]>([]);
   const [teachers, setTeachers] = useState<TeacherAccount[]>([]);
@@ -80,6 +112,7 @@ export function SchoolManagement() {
   const menuItems = [
     { id: 'overview', label: 'School Overview', icon: Building },
     { id: 'teachers', label: 'Teacher Management', icon: Users },
+    { id: 'users', label: 'User Management', icon: UserPlus },
     { id: 'performance', label: 'Performance Monitoring', icon: BarChart3 },
     { id: 'settings', label: 'School Settings', icon: Settings }
   ];
@@ -169,7 +202,8 @@ export function SchoolManagement() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
+          {/* Total Students Card */}
+          <div className="bg-white rounded-xl p-6 border border-gray-200 cursor-pointer" onClick={() => setOpenStat(openStat === 'students' ? null : 'students')}>
             <div className="flex items-center gap-4">
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Users className="w-6 h-6 text-blue-600" />
@@ -179,9 +213,19 @@ export function SchoolManagement() {
                 <p className="text-sm text-gray-600">Total Students</p>
               </div>
             </div>
+            {openStat === 'students' && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg text-blue-900 text-sm">
+                <span className="font-semibold">Student Names:</span>
+                <ul className="list-disc ml-6 mt-1">
+                  {/* No student list available in School, so show placeholder */}
+                  <li>Student list not available in this demo.</li>
+                </ul>
+              </div>
+            )}
           </div>
 
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
+          {/* Total Teachers Card */}
+          <div className="bg-white rounded-xl p-6 border border-gray-200 cursor-pointer" onClick={() => setOpenStat(openStat === 'teachers' ? null : 'teachers')}>
             <div className="flex items-center gap-4">
               <div className="p-3 bg-green-100 rounded-lg">
                 <UserPlus className="w-6 h-6 text-green-600" />
@@ -191,9 +235,24 @@ export function SchoolManagement() {
                 <p className="text-sm text-gray-600">Total Teachers</p>
               </div>
             </div>
+            {openStat === 'teachers' && (
+              <div className="mt-4 p-4 bg-green-50 rounded-lg text-green-900 text-sm">
+                <span className="font-semibold">Teacher Names:</span>
+                <ul className="list-disc ml-6 mt-1">
+                  {teachers.length === 0 ? (
+                    <li>No teachers found.</li>
+                  ) : (
+                    teachers.map(t => (
+                      <li key={t.id}>{t.personalInfo.firstName} {t.personalInfo.lastName}</li>
+                    ))
+                  )}
+                </ul>
+              </div>
+            )}
           </div>
 
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
+          {/* Classrooms Card */}
+          <div className="bg-white rounded-xl p-6 border border-gray-200 cursor-pointer" onClick={() => setOpenStat(openStat === 'classrooms' ? null : 'classrooms')}>
             <div className="flex items-center gap-4">
               <div className="p-3 bg-purple-100 rounded-lg">
                 <Building className="w-6 h-6 text-purple-600" />
@@ -203,9 +262,20 @@ export function SchoolManagement() {
                 <p className="text-sm text-gray-600">Classrooms</p>
               </div>
             </div>
+            {openStat === 'classrooms' && (
+              <div className="mt-4 p-4 bg-purple-50 rounded-lg text-purple-900 text-sm">
+                <span className="font-semibold">Classroom List:</span>
+                <ul className="list-disc ml-6 mt-1">
+                  {Array.from({ length: selectedSchool.capacity.classrooms }, (_, i) => (
+                    <li key={i}>Classroom {i + 1}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
+          {/* Grade Levels Card */}
+          <div className="bg-white rounded-xl p-6 border border-gray-200 cursor-pointer" onClick={() => setOpenStat(openStat === 'grades' ? null : 'grades')}>
             <div className="flex items-center gap-4">
               <div className="p-3 bg-orange-100 rounded-lg">
                 <Award className="w-6 h-6 text-orange-600" />
@@ -215,8 +285,23 @@ export function SchoolManagement() {
                 <p className="text-sm text-gray-600">Grade Levels</p>
               </div>
             </div>
+            {openStat === 'grades' && (
+              <div className="mt-4 p-4 bg-orange-50 rounded-lg text-orange-900 text-sm">
+                <span className="font-semibold">Grades:</span>
+                <ul className="list-disc ml-6 mt-1">
+                  {selectedSchool.capacity.grades.length === 0 ? (
+                    <li>No grades found.</li>
+                  ) : (
+                    selectedSchool.capacity.grades.map((g, i) => (
+                      <li key={i}>{g}</li>
+                    ))
+                  )}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
+  // ...existing code...
 
         {/* School Details */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -444,6 +529,7 @@ export function SchoolManagement() {
       <div>
         {activeSection === 'overview' && renderOverview()}
         {activeSection === 'teachers' && renderTeacherManagement()}
+        {activeSection === 'users' && renderUserManagement()}
         {activeSection === 'performance' && analytics && selectedSchool && (
           <PerformanceMonitoringDashboard 
             analytics={analytics} 
@@ -481,6 +567,18 @@ export function SchoolManagement() {
             setEditingTeacher(null);
           }}
           onSuccess={handleTeacherSuccess}
+        />
+      )}
+
+      {showUserModal && (
+        <UserModal
+          user={null}
+          mode={userModalMode}
+          onClose={() => setShowUserModal(false)}
+          onSuccess={() => {
+            setShowUserModal(false);
+            setUserModalSuccess(true);
+          }}
         />
       )}
     </div>
