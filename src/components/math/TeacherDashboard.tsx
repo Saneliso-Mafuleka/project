@@ -1067,7 +1067,7 @@ export function TeacherDashboard() {
           </div>
         );
       case 'grades':
-        // Grades & Assessment Section (Enhanced)
+        // Grades & Assessment Section (Refined)
         type GradeEntry = { id: string; student: string; assignment: string; grade: number; };
         const [grades, setGrades] = useState<GradeEntry[]>([]);
         const [newGrade, setNewGrade] = useState<Partial<GradeEntry>>({ student: '', assignment: '', grade: undefined });
@@ -1076,10 +1076,10 @@ export function TeacherDashboard() {
         const [viewStudent, setViewStudent] = useState<string | null>(null);
         const [filterStudent, setFilterStudent] = useState('all');
 
+        // Handlers
         const handleGradeInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
           setNewGrade({ ...newGrade, [e.target.name]: e.target.value });
         };
-
         const openAddGrade = () => {
           setEditingGradeId(null);
           setNewGrade({ student: '', assignment: '', grade: undefined });
@@ -1109,7 +1109,7 @@ export function TeacherDashboard() {
           if (editingGradeId === id) closeGradeModal();
         };
 
-        // Generate CSV report
+        // CSV Report
         const downloadCSV = () => {
           const csv = [
             ['Student', 'Assignment', 'Grade'],
@@ -1124,7 +1124,7 @@ export function TeacherDashboard() {
           URL.revokeObjectURL(url);
         };
 
-        // Progress tracking: average grade per student
+        // Progress tracking
         const studentAverages: { [student: string]: number } = {};
         grades.forEach(g => {
           if (!studentAverages[g.student]) studentAverages[g.student] = 0;
@@ -1135,6 +1135,17 @@ export function TeacherDashboard() {
           studentAverages[s] = count ? (studentAverages[s] / count) : 0;
         });
 
+        // Assignment stats
+        const assignmentStats: { [assignment: string]: { count: number; avg: number } } = {};
+        grades.forEach(g => {
+          if (!assignmentStats[g.assignment]) assignmentStats[g.assignment] = { count: 0, avg: 0 };
+          assignmentStats[g.assignment].count++;
+          assignmentStats[g.assignment].avg += g.grade;
+        });
+        Object.keys(assignmentStats).forEach(a => {
+          assignmentStats[a].avg = assignmentStats[a].count ? (assignmentStats[a].avg / assignmentStats[a].count) : 0;
+        });
+
         // Filtered grades
         const gradesToShow = filterStudent === 'all' ? grades : grades.filter(g => g.student === filterStudent);
         const studentsList = Array.from(new Set(grades.map(g => g.student)));
@@ -1142,7 +1153,7 @@ export function TeacherDashboard() {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><Award className="inline w-6 h-6" /> Grades & Assessment</h2>
-            <p className="mb-6 text-gray-600">Manage grades and results for your students</p>
+            <p className="mb-6 text-gray-600">Grade assignments, track progress, and generate reports</p>
             <div className="mb-6 flex flex-wrap gap-4 items-center">
               <button onClick={openAddGrade} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Grade</button>
               <select value={filterStudent} onChange={e => setFilterStudent(e.target.value)} className="border p-2 rounded">
@@ -1150,6 +1161,7 @@ export function TeacherDashboard() {
                 {studentsList.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
+            {/* Grades Table */}
             <div className="bg-white p-4 rounded shadow mb-6">
               <h3 className="font-semibold mb-2">Grades Table</h3>
               {gradesToShow.length === 0 ? (
@@ -1180,6 +1192,33 @@ export function TeacherDashboard() {
                 </table>
               )}
             </div>
+            {/* Assignment Stats */}
+            <div className="bg-white p-4 rounded shadow mb-6">
+              <h3 className="font-semibold mb-2">Assignment Statistics</h3>
+              {Object.keys(assignmentStats).length === 0 ? (
+                <p className="text-gray-500">No assignment data yet.</p>
+              ) : (
+                <table className="w-full text-left border">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="p-2">Assignment</th>
+                      <th className="p-2"># Graded</th>
+                      <th className="p-2">Average (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(assignmentStats).map(([assignment, stat]) => (
+                      <tr key={assignment} className="border-t">
+                        <td className="p-2">{assignment}</td>
+                        <td className="p-2">{stat.count}</td>
+                        <td className="p-2">{stat.avg.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            {/* Progress Tracking */}
             <div className="bg-white p-4 rounded shadow mb-6">
               <h3 className="font-semibold mb-2">Progress Tracking</h3>
               {Object.keys(studentAverages).length === 0 ? (
@@ -1203,6 +1242,7 @@ export function TeacherDashboard() {
                 </table>
               )}
             </div>
+            {/* Download Report */}
             <button
               onClick={downloadCSV}
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
@@ -1287,7 +1327,11 @@ export function TeacherDashboard() {
         const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
 
         const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-          const { name, value, type, checked } = e.target;
+          const { name, value, type } = e.target;
+          let checked = false;
+          if (type === 'checkbox') {
+            checked = (e.target as HTMLInputElement).checked;
+          }
           if (name.startsWith('notif_')) {
             setSettings({
               ...settings,
