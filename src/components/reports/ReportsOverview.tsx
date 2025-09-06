@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// StudentDropdown component for profile info
 import { 
   BarChart3, 
   TrendingUp, 
@@ -14,6 +15,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { mathSchoolService } from '../../lib/mathSchoolService';
+import { MathStudent, RegistrationRequest } from '../../types/mathSchool';
 import { useConnectionStatus } from '../../hooks/useConnectionStatus';
 
 interface ReportData {
@@ -28,7 +30,11 @@ interface ReportData {
 }
 
 export function ReportsOverview() {
+  // Dropdown state for KPI details
+  const [openKpi, setOpenKpi] = useState<string | null>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [studentList, setStudentList] = useState<MathStudent[]>([]);
+  const [pendingList, setPendingList] = useState<RegistrationRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState('30');
@@ -36,7 +42,10 @@ export function ReportsOverview() {
   const { isOnline } = useConnectionStatus();
 
   useEffect(() => {
-    loadReportData();
+  loadReportData();
+  // Load students and pending requests for KPI details
+  mathSchoolService.getRegisteredStudents().then(setStudentList);
+  mathSchoolService.getPendingRequests().then(setPendingList);
   }, [dateRange]);
 
   const loadReportData = async () => {
@@ -191,7 +200,8 @@ export function ReportsOverview() {
 
       {/* Key Performance Indicators */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        {/* Total Students KPI */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200 cursor-pointer" onClick={() => setOpenKpi(openKpi === 'students' ? null : 'students')}>
           <div className="flex items-center gap-4">
             <div className="p-3 bg-blue-100 rounded-lg">
               <Users className="w-6 h-6 text-blue-600" />
@@ -201,9 +211,27 @@ export function ReportsOverview() {
               <p className="text-sm text-gray-600">Total Students</p>
             </div>
           </div>
+          {openKpi === 'students' && (
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg text-blue-900 text-sm">
+              <strong>Total Students:</strong> The number of students currently registered in the system. This includes all grade levels and reflects the latest registration data.<br />
+              <div className="mt-2">
+                <span className="font-semibold">Student Names:</span>
+                <ul className="list-disc ml-6 mt-1">
+                  {studentList.length === 0 ? (
+                    <li>No students found.</li>
+                  ) : (
+                    studentList.map(s => (
+                      <li key={s.id}>{s.fullName} (Grade {s.gradeLevel})</li>
+                    ))
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        {/* Approval Rate KPI */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200 cursor-pointer" onClick={() => setOpenKpi(openKpi === 'approval' ? null : 'approval')}>
           <div className="flex items-center gap-4">
             <div className="p-3 bg-green-100 rounded-lg">
               <TrendingUp className="w-6 h-6 text-green-600" />
@@ -213,9 +241,15 @@ export function ReportsOverview() {
               <p className="text-sm text-gray-600">Approval Rate</p>
             </div>
           </div>
+          {openKpi === 'approval' && (
+            <div className="mt-4 p-4 bg-green-50 rounded-lg text-green-900 text-sm">
+              <strong>Approval Rate:</strong> The percentage of registration requests that have been approved. A higher rate indicates efficient processing and successful student onboarding.
+            </div>
+          )}
         </div>
 
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        {/* Average Test Score KPI */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200 cursor-pointer" onClick={() => setOpenKpi(openKpi === 'score' ? null : 'score')}>
           <div className="flex items-center gap-4">
             <div className="p-3 bg-purple-100 rounded-lg">
               <Award className="w-6 h-6 text-purple-600" />
@@ -225,9 +259,15 @@ export function ReportsOverview() {
               <p className="text-sm text-gray-600">Avg Test Score</p>
             </div>
           </div>
+          {openKpi === 'score' && (
+            <div className="mt-4 p-4 bg-purple-50 rounded-lg text-purple-900 text-sm">
+              <strong>Average Test Score:</strong> The mean score of all placement tests taken by students. This helps track academic performance and identify areas for improvement.
+            </div>
+          )}
         </div>
 
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        {/* Pending Requests KPI */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200 cursor-pointer" onClick={() => setOpenKpi(openKpi === 'pending' ? null : 'pending')}>
           <div className="flex items-center gap-4">
             <div className="p-3 bg-orange-100 rounded-lg">
               <Clock className="w-6 h-6 text-orange-600" />
@@ -237,6 +277,23 @@ export function ReportsOverview() {
               <p className="text-sm text-gray-600">Pending Requests</p>
             </div>
           </div>
+          {openKpi === 'pending' && (
+            <div className="mt-4 p-4 bg-orange-50 rounded-lg text-orange-900 text-sm">
+              <strong>Pending Requests:</strong> The number of registration requests awaiting approval. Monitoring this helps ensure timely processing and reduces bottlenecks.<br />
+              <div className="mt-2">
+                <span className="font-semibold">Individuals Pending:</span>
+                <ul className="list-disc ml-6 mt-1">
+                  {pendingList.length === 0 ? (
+                    <li>No pending requests.</li>
+                  ) : (
+                    pendingList.map(r => (
+                      <li key={r.id}>{r.student.fullName} (Grade {r.student.gradeLevel}) - {r.requestedClass}</li>
+                    ))
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

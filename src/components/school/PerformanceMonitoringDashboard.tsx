@@ -57,18 +57,6 @@ export function PerformanceMonitoringDashboard({ analytics, school, teachers }: 
           <h2 className="text-2xl font-bold text-gray-900">Performance Monitoring Dashboard</h2>
           <p className="text-gray-600 mt-1">Comprehensive analytics for {school.name}</p>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <select
-            value={selectedTimeframe}
-            onChange={(e) => setSelectedTimeframe(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="current">Current Year</option>
-            <option value="previous">Previous Year</option>
-            <option value="comparison">Year Comparison</option>
-          </select>
-        </div>
       </div>
 
       {/* Key Performance Indicators */}
@@ -293,34 +281,58 @@ export function PerformanceMonitoringDashboard({ analytics, school, teachers }: 
 
       {/* Year-over-Year Trends */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-end mb-4">
+          <select
+            value={selectedTimeframe}
+            onChange={(e) => setSelectedTimeframe(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="current">Current Year</option>
+            <option value="previous">Previous Year</option>
+            <option value="comparison">Year Comparison</option>
+          </select>
+        </div>
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Year-over-Year Trends</h3>
         <div className="space-y-4">
-          {analytics.academic.yearOverYearTrends.map((trend) => (
-            <div key={trend.year} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div>
-                <h4 className="font-semibold text-gray-900">{trend.year}</h4>
+          {(() => {
+            let trends = analytics.academic.yearOverYearTrends;
+            if (selectedTimeframe === 'current') {
+              const yearNumbers = trends.map(t => parseInt(t.year));
+              const currentYear = Math.max(...yearNumbers);
+              trends = trends.filter(t => parseInt(t.year) === currentYear);
+            } else if (selectedTimeframe === 'previous') {
+              const yearNumbers = trends.map(t => parseInt(t.year));
+              const currentYear = Math.max(...yearNumbers);
+              const previousYear = Math.max(...yearNumbers.filter(y => y !== currentYear));
+              trends = trends.filter(t => parseInt(t.year) === previousYear);
+            }
+            // 'comparison' shows all years
+            return trends.map((trend) => (
+              <div key={trend.year} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div>
+                  <h4 className="font-semibold text-gray-900">{trend.year}</h4>
+                </div>
+                <div className="grid grid-cols-4 gap-8 text-center">
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">{trend.passRate}%</p>
+                    <p className="text-xs text-gray-500">Pass Rate</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">{trend.averageScore}%</p>
+                    <p className="text-xs text-gray-500">Avg Score</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">{trend.teacherPerformance}%</p>
+                    <p className="text-xs text-gray-500">Teacher Perf</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">{trend.studentSatisfaction}/5</p>
+                    <p className="text-xs text-gray-500">Satisfaction</p>
+                  </div>
+                </div>
               </div>
-              
-              <div className="grid grid-cols-4 gap-8 text-center">
-                <div>
-                  <p className="text-lg font-bold text-gray-900">{trend.passRate}%</p>
-                  <p className="text-xs text-gray-500">Pass Rate</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-gray-900">{trend.averageScore}%</p>
-                  <p className="text-xs text-gray-500">Avg Score</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-gray-900">{trend.teacherPerformance}%</p>
-                  <p className="text-xs text-gray-500">Teacher Perf</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-gray-900">{trend.studentSatisfaction}/5</p>
-                  <p className="text-xs text-gray-500">Satisfaction</p>
-                </div>
-              </div>
-            </div>
-          ))}
+            ));
+          })()}
         </div>
       </div>
     </div>
