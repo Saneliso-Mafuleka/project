@@ -37,6 +37,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { LearningMaterial } from '../../types/learningMaterials';
 import { learningMaterialsService } from '../../lib/learningMaterialsService';
 import { MaterialModal } from './MaterialModal';
+import { MaterialViewer } from '../common/MaterialViewer';
 
 export function TeacherDashboard() {
   const { logout } = useAuth();
@@ -76,6 +77,45 @@ export function TeacherDashboard() {
     averageProcessingTime: '2.3 hours',
     topGradeRequests: 'Grade 8'
   });
+
+  // Class Management State
+  type MathClass = {
+    id: string;
+    name: string;
+    schedule: string;
+    curriculum: string;
+  };
+  const [classes, setClasses] = useState<MathClass[]>([]);
+  const [newClass, setNewClass] = useState<Partial<MathClass>>({ name: '', schedule: '', curriculum: '' });
+  const [editingClassId, setEditingClassId] = useState<string | null>(null);
+  // Class Management Handlers
+  const handleClassInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setNewClass({ ...newClass, [e.target.name]: e.target.value });
+  };
+
+  const addOrEditClass = () => {
+    if (!newClass.name || !newClass.schedule || !newClass.curriculum) return;
+    if (editingClassId) {
+      setClasses(classes.map(cls => cls.id === editingClassId ? { ...cls, ...newClass, id: editingClassId } as MathClass : cls));
+      setEditingClassId(null);
+    } else {
+      setClasses([...classes, { ...newClass, id: Date.now().toString() } as MathClass]);
+    }
+    setNewClass({ name: '', schedule: '', curriculum: '' });
+  };
+
+  const editClass = (cls: MathClass) => {
+    setNewClass(cls);
+    setEditingClassId(cls.id);
+  };
+
+  const deleteClass = (id: string) => {
+    setClasses(classes.filter(cls => cls.id !== id));
+    if (editingClassId === id) {
+      setEditingClassId(null);
+      setNewClass({ name: '', schedule: '', curriculum: '' });
+    }
+  };
 
   // Load saved filter preferences on component mount
   useEffect(() => {
@@ -464,6 +504,54 @@ export function TeacherDashboard() {
     </div>
   );
 
+  // Student Management State
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<MathStudent | null>(null);
+  const [viewingStudent, setViewingStudent] = useState<MathStudent | null>(null);
+  const [deleteStudentId, setDeleteStudentId] = useState<string | null>(null);
+  const [studentForm, setStudentForm] = useState<Partial<MathStudent>>({ fullName: '', studentId: '', gradeLevel: 6, mathLevel: '', placementTestScore: 0 });
+
+  const openAddStudent = () => {
+    setEditingStudent(null);
+    setStudentForm({ fullName: '', studentId: '', gradeLevel: 6, mathLevel: '', placementTestScore: 0 });
+    setShowStudentModal(true);
+  };
+  const openEditStudent = (student: MathStudent) => {
+    setEditingStudent(student);
+    setStudentForm(student);
+    setShowStudentModal(true);
+  };
+  const openViewStudent = (student: MathStudent) => {
+    setViewingStudent(student);
+  };
+  const openDeleteStudent = (id: string) => {
+    setDeleteStudentId(id);
+  };
+  const closeStudentModal = () => {
+    setShowStudentModal(false);
+    setEditingStudent(null);
+    setStudentForm({ fullName: '', studentId: '', gradeLevel: 6, mathLevel: '', placementTestScore: 0 });
+  };
+  const closeViewStudent = () => setViewingStudent(null);
+  const closeDeleteStudent = () => setDeleteStudentId(null);
+
+  const handleStudentFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setStudentForm({ ...studentForm, [e.target.name]: e.target.value });
+  };
+  const saveStudent = () => {
+    if (!studentForm.fullName || !studentForm.studentId || !studentForm.mathLevel) return;
+    if (editingStudent) {
+      setRegisteredStudents(registeredStudents.map(s => s.id === editingStudent.id ? { ...editingStudent, ...studentForm } as MathStudent : s));
+    } else {
+      setRegisteredStudents([...registeredStudents, { ...studentForm, id: Date.now().toString() } as MathStudent]);
+    }
+    closeStudentModal();
+  };
+  const confirmDeleteStudent = () => {
+    setRegisteredStudents(registeredStudents.filter(s => s.id !== deleteStudentId));
+    closeDeleteStudent();
+  };
+
   const renderStudentManagement = () => (
     <div className="space-y-6">
       {/* Search and Filters */}
@@ -481,7 +569,6 @@ export function TeacherDashboard() {
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-
             <select
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
@@ -492,7 +579,6 @@ export function TeacherDashboard() {
                 <option key={grade} value={grade}>Grade {grade}</option>
               ))}
             </select>
-
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'name' | 'grade' | 'date')}
@@ -502,15 +588,13 @@ export function TeacherDashboard() {
               <option value="grade">Sort by Grade</option>
               <option value="date">Sort by Date</option>
             </select>
-
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button onClick={openAddStudent} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
               <Plus className="w-4 h-4" />
               Add Student
             </button>
           </div>
         </div>
       </div>
-
       {/* Students Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
@@ -567,13 +651,13 @@ export function TeacherDashboard() {
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2">
-                      <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                      <button onClick={() => openViewStudent(student)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+                      <button onClick={() => openEditStudent(student)} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors">
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <button onClick={() => openDeleteStudent(student.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -584,6 +668,61 @@ export function TeacherDashboard() {
           </table>
         </div>
       </div>
+
+      {/* Add/Edit Student Modal */}
+      {showStudentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">{editingStudent ? 'Edit Student' : 'Add Student'}</h3>
+            <div className="space-y-4">
+              <input name="fullName" value={studentForm.fullName || ''} onChange={handleStudentFormChange} placeholder="Full Name" className="w-full border p-2 rounded" />
+              <input name="studentId" value={studentForm.studentId || ''} onChange={handleStudentFormChange} placeholder="Student ID" className="w-full border p-2 rounded" />
+              <select name="gradeLevel" value={studentForm.gradeLevel || 6} onChange={handleStudentFormChange} className="w-full border p-2 rounded">
+                {[6,7,8,9,10,11,12].map(g => <option key={g} value={g}>Grade {g}</option>)}
+              </select>
+              <input name="mathLevel" value={studentForm.mathLevel || ''} onChange={handleStudentFormChange} placeholder="Math Level" className="w-full border p-2 rounded" />
+              <input name="placementTestScore" type="number" value={studentForm.placementTestScore || 0} onChange={handleStudentFormChange} placeholder="Placement Test Score (%)" className="w-full border p-2 rounded" />
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={closeStudentModal} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
+              <button onClick={saveStudent} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{editingStudent ? 'Update' : 'Add'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Student Modal */}
+      {viewingStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Student Details</h3>
+            <div className="space-y-2">
+              <div><strong>Name:</strong> {viewingStudent.fullName}</div>
+              <div><strong>Student ID:</strong> {viewingStudent.studentId}</div>
+              <div><strong>Grade:</strong> {viewingStudent.gradeLevel}</div>
+              <div><strong>Math Level:</strong> {viewingStudent.mathLevel}</div>
+              <div><strong>Placement Test Score:</strong> {viewingStudent.placementTestScore}%</div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={closeViewStudent} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Student Confirmation */}
+      {deleteStudentId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Delete Student</h3>
+            <p>Are you sure you want to delete this student?</p>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={closeDeleteStudent} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
+              <button onClick={confirmDeleteStudent} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -851,15 +990,407 @@ export function TeacherDashboard() {
       case 'materials':
         return renderLearningMaterials();
       case 'classes':
-        return renderPlaceholder('Class Management', 'Manage your math classes, schedules, and curriculum', BookOpen);
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><BookOpen className="inline w-6 h-6" /> Class Management</h2>
+            <p className="mb-6 text-gray-600">Manage your math classes, schedules, and curriculum</p>
+            <div className="mb-6 bg-white p-4 rounded shadow">
+              <h3 className="font-semibold mb-2">{editingClassId ? 'Edit Class' : 'Add New Class'}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input
+                  name="name"
+                  value={newClass.name || ''}
+                  onChange={handleClassInputChange}
+                  placeholder="Class Name"
+                  className="border p-2 rounded"
+                />
+                <input
+                  name="schedule"
+                  value={newClass.schedule || ''}
+                  onChange={handleClassInputChange}
+                  placeholder="Schedule (e.g. Mon 10:00-11:00)"
+                  className="border p-2 rounded"
+                />
+                <input
+                  name="curriculum"
+                  value={newClass.curriculum || ''}
+                  onChange={handleClassInputChange}
+                  placeholder="Curriculum/Topics"
+                  className="border p-2 rounded"
+                />
+              </div>
+              <button
+                onClick={addOrEditClass}
+                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                {editingClassId ? 'Update Class' : 'Add Class'}
+              </button>
+              {editingClassId && (
+                <button
+                  onClick={() => { setEditingClassId(null); setNewClass({ name: '', schedule: '', curriculum: '' }); }}
+                  className="ml-2 mt-3 px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="font-semibold mb-2">Your Classes</h3>
+              {classes.length === 0 ? (
+                <p className="text-gray-500">No classes added yet.</p>
+              ) : (
+                <table className="w-full text-left border">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="p-2">Name</th>
+                      <th className="p-2">Schedule</th>
+                      <th className="p-2">Curriculum</th>
+                      <th className="p-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {classes.map(cls => (
+                      <tr key={cls.id} className="border-t">
+                        <td className="p-2">{cls.name}</td>
+                        <td className="p-2">{cls.schedule}</td>
+                        <td className="p-2">{cls.curriculum}</td>
+                        <td className="p-2 flex gap-2">
+                          <button onClick={() => editClass(cls)} className="px-2 py-1 bg-yellow-200 rounded hover:bg-yellow-300">Edit</button>
+                          <button onClick={() => deleteClass(cls.id)} className="px-2 py-1 bg-red-200 rounded hover:bg-red-300">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        );
       case 'grades':
-        return renderPlaceholder('Grades & Assessment', 'Grade assignments, track progress, and generate reports', Award);
+        // Grades & Assessment Section (Enhanced)
+        type GradeEntry = { id: string; student: string; assignment: string; grade: number; };
+        const [grades, setGrades] = useState<GradeEntry[]>([]);
+        const [newGrade, setNewGrade] = useState<Partial<GradeEntry>>({ student: '', assignment: '', grade: undefined });
+        const [editingGradeId, setEditingGradeId] = useState<string | null>(null);
+        const [showGradeModal, setShowGradeModal] = useState(false);
+        const [viewStudent, setViewStudent] = useState<string | null>(null);
+        const [filterStudent, setFilterStudent] = useState('all');
+
+        const handleGradeInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+          setNewGrade({ ...newGrade, [e.target.name]: e.target.value });
+        };
+
+        const openAddGrade = () => {
+          setEditingGradeId(null);
+          setNewGrade({ student: '', assignment: '', grade: undefined });
+          setShowGradeModal(true);
+        };
+        const openEditGrade = (g: GradeEntry) => {
+          setEditingGradeId(g.id);
+          setNewGrade(g);
+          setShowGradeModal(true);
+        };
+        const closeGradeModal = () => {
+          setShowGradeModal(false);
+          setEditingGradeId(null);
+          setNewGrade({ student: '', assignment: '', grade: undefined });
+        };
+        const saveGrade = () => {
+          if (!newGrade.student || !newGrade.assignment || newGrade.grade === undefined) return;
+          if (editingGradeId) {
+            setGrades(grades.map(g => g.id === editingGradeId ? { ...g, ...newGrade, id: editingGradeId, grade: Number(newGrade.grade) } as GradeEntry : g));
+          } else {
+            setGrades([...grades, { ...newGrade, id: Date.now().toString(), grade: Number(newGrade.grade) } as GradeEntry]);
+          }
+          closeGradeModal();
+        };
+        const deleteGrade = (id: string) => {
+          setGrades(grades.filter(g => g.id !== id));
+          if (editingGradeId === id) closeGradeModal();
+        };
+
+        // Generate CSV report
+        const downloadCSV = () => {
+          const csv = [
+            ['Student', 'Assignment', 'Grade'],
+            ...grades.map(g => [g.student, g.assignment, g.grade])
+          ].map(row => row.join(',')).join('\n');
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'grades_report.csv';
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+
+        // Progress tracking: average grade per student
+        const studentAverages: { [student: string]: number } = {};
+        grades.forEach(g => {
+          if (!studentAverages[g.student]) studentAverages[g.student] = 0;
+          studentAverages[g.student] += g.grade;
+        });
+        Object.keys(studentAverages).forEach(s => {
+          const count = grades.filter(g => g.student === s).length;
+          studentAverages[s] = count ? (studentAverages[s] / count) : 0;
+        });
+
+        // Filtered grades
+        const gradesToShow = filterStudent === 'all' ? grades : grades.filter(g => g.student === filterStudent);
+        const studentsList = Array.from(new Set(grades.map(g => g.student)));
+
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><Award className="inline w-6 h-6" /> Grades & Assessment</h2>
+            <p className="mb-6 text-gray-600">Manage grades and results for your students</p>
+            <div className="mb-6 flex flex-wrap gap-4 items-center">
+              <button onClick={openAddGrade} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Grade</button>
+              <select value={filterStudent} onChange={e => setFilterStudent(e.target.value)} className="border p-2 rounded">
+                <option value="all">All Students</option>
+                {studentsList.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="bg-white p-4 rounded shadow mb-6">
+              <h3 className="font-semibold mb-2">Grades Table</h3>
+              {gradesToShow.length === 0 ? (
+                <p className="text-gray-500">No grades recorded yet.</p>
+              ) : (
+                <table className="w-full text-left border">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="p-2">Student</th>
+                      <th className="p-2">Assignment</th>
+                      <th className="p-2">Grade (%)</th>
+                      <th className="p-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gradesToShow.map(g => (
+                      <tr key={g.id} className="border-t">
+                        <td className="p-2 cursor-pointer text-blue-700 underline" onClick={() => setViewStudent(g.student)}>{g.student}</td>
+                        <td className="p-2">{g.assignment}</td>
+                        <td className="p-2">{g.grade}</td>
+                        <td className="p-2 flex gap-2">
+                          <button onClick={() => openEditGrade(g)} className="px-2 py-1 bg-yellow-200 rounded hover:bg-yellow-300">Edit</button>
+                          <button onClick={() => deleteGrade(g.id)} className="px-2 py-1 bg-red-200 rounded hover:bg-red-300">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="bg-white p-4 rounded shadow mb-6">
+              <h3 className="font-semibold mb-2">Progress Tracking</h3>
+              {Object.keys(studentAverages).length === 0 ? (
+                <p className="text-gray-500">No progress data yet.</p>
+              ) : (
+                <table className="w-full text-left border">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="p-2">Student</th>
+                      <th className="p-2">Average Grade (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(studentAverages).map(([student, avg]) => (
+                      <tr key={student} className="border-t">
+                        <td className="p-2 cursor-pointer text-blue-700 underline" onClick={() => setViewStudent(student)}>{student}</td>
+                        <td className="p-2">{avg.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <button
+              onClick={downloadCSV}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Download Grades Report (CSV)
+            </button>
+
+            {/* Add/Edit Grade Modal */}
+            {showGradeModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+                <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+                  <h3 className="text-lg font-bold mb-4">{editingGradeId ? 'Edit Grade' : 'Add Grade'}</h3>
+                  <div className="space-y-4">
+                    <input name="student" value={newGrade.student || ''} onChange={handleGradeInputChange} placeholder="Student Name" className="w-full border p-2 rounded" />
+                    <input name="assignment" value={newGrade.assignment || ''} onChange={handleGradeInputChange} placeholder="Assignment" className="w-full border p-2 rounded" />
+                    <input name="grade" type="number" min="0" max="100" value={newGrade.grade === undefined ? '' : newGrade.grade} onChange={handleGradeInputChange} placeholder="Grade (%)" className="w-full border p-2 rounded" />
+                  </div>
+                  <div className="flex justify-end gap-2 mt-6">
+                    <button onClick={closeGradeModal} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
+                    <button onClick={saveGrade} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{editingGradeId ? 'Update' : 'Add'}</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* View Student Results Modal */}
+            {viewStudent && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+                <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+                  <h3 className="text-lg font-bold mb-4">{viewStudent} - Results</h3>
+                  <div className="space-y-2 mb-4">
+                    {grades.filter(g => g.student === viewStudent).length === 0 ? (
+                      <p className="text-gray-500">No results for this student.</p>
+                    ) : (
+                      <table className="w-full text-left border">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="p-2">Assignment</th>
+                            <th className="p-2">Grade (%)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {grades.filter(g => g.student === viewStudent).map(g => (
+                            <tr key={g.id} className="border-t">
+                              <td className="p-2">{g.assignment}</td>
+                              <td className="p-2">{g.grade}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                  <div className="flex justify-end gap-2 mt-6">
+                    <button onClick={() => setViewStudent(null)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Close</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
       case 'reports':
         return renderPlaceholder('Reports & Analytics', 'View detailed reports and analytics for your classes', BarChart3);
       case 'messages':
         return renderPlaceholder('Messages', 'Communicate with students and parents', MessageCircle);
       case 'settings':
-        return renderPlaceholder('Settings', 'Manage your preferences and account settings', Settings);
+        // Settings State
+        const [settings, setSettings] = useState({
+          displayName: 'Teacher Name',
+          email: 'teacher@email.com',
+          theme: 'light',
+          password: '',
+          newPassword: '',
+          notifications: {
+            email: true,
+            sms: false,
+            push: true,
+          },
+        });
+        const [showPassword, setShowPassword] = useState(false);
+        const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
+        const [profilePic, setProfilePic] = useState<string | null>(null);
+        const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
+
+        const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+          const { name, value, type, checked } = e.target;
+          if (name.startsWith('notif_')) {
+            setSettings({
+              ...settings,
+              notifications: {
+                ...settings.notifications,
+                [name.replace('notif_', '')]: type === 'checkbox' ? checked : value,
+              },
+            });
+          } else {
+            setSettings({ ...settings, [name]: value });
+          }
+        };
+        const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+          setSettings({ ...settings, theme: e.target.value });
+          localStorage.setItem('theme', e.target.value);
+        };
+        const handleSaveSettings = () => {
+          setSettingsMsg('Preferences saved!');
+          setTimeout(() => setSettingsMsg(null), 2000);
+        };
+        const handleChangePassword = () => {
+          if (!settings.password || !settings.newPassword) {
+            setSettingsMsg('Please enter both current and new password.');
+            return;
+          }
+          setSettingsMsg('Password changed!');
+          setSettings({ ...settings, password: '', newPassword: '' });
+          setTimeout(() => setSettingsMsg(null), 2000);
+        };
+        const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          if (e.target.files && e.target.files[0]) {
+            setProfilePicFile(e.target.files[0]);
+            const reader = new FileReader();
+            reader.onload = (ev) => setProfilePic(ev.target?.result as string);
+            reader.readAsDataURL(e.target.files[0]);
+          }
+        };
+
+        return (
+          <div className="p-6 max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><Settings className="inline w-6 h-6" /> Settings</h2>
+            <p className="mb-6 text-gray-600">Manage your preferences and account settings</p>
+            <div className="bg-white p-6 rounded shadow space-y-6">
+              <div>
+                <h3 className="font-semibold mb-2">Profile</h3>
+                <div className="flex items-center gap-6 mb-4">
+                  <div>
+                    <label htmlFor="profilePicUpload" className="block mb-2 font-medium">Profile Picture</label>
+                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border">
+                      {profilePic ? (
+                        <img src={profilePic} alt="Profile" className="object-cover w-full h-full" />
+                      ) : (
+                        <User className="w-10 h-10 text-gray-400" />
+                      )}
+                    </div>
+                    <input id="profilePicUpload" type="file" accept="image/*" onChange={handleProfilePicChange} className="mt-2" />
+                  </div>
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input name="displayName" value={settings.displayName} onChange={handleSettingsChange} placeholder="Display Name" className="border p-2 rounded" />
+                    <input name="email" value={settings.email} onChange={handleSettingsChange} placeholder="Email" className="border p-2 rounded" />
+                  </div>
+                </div>
+                <button onClick={handleSaveSettings} className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Profile</button>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Theme</h3>
+                <select name="theme" value={settings.theme} onChange={handleThemeChange} className="border p-2 rounded">
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </select>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Notification Preferences</h3>
+                <div className="flex flex-col gap-2">
+                  <label className="inline-flex items-center">
+                    <input type="checkbox" name="notif_email" checked={settings.notifications.email} onChange={handleSettingsChange} className="mr-2" /> Email Notifications
+                  </label>
+                  <label className="inline-flex items-center">
+                    <input type="checkbox" name="notif_sms" checked={settings.notifications.sms} onChange={handleSettingsChange} className="mr-2" /> SMS Notifications
+                  </label>
+                  <label className="inline-flex items-center">
+                    <input type="checkbox" name="notif_push" checked={settings.notifications.push} onChange={handleSettingsChange} className="mr-2" /> Push Notifications
+                  </label>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Change Password</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input name="password" type={showPassword ? 'text' : 'password'} value={settings.password} onChange={handleSettingsChange} placeholder="Current Password" className="border p-2 rounded" />
+                  <input name="newPassword" type={showPassword ? 'text' : 'password'} value={settings.newPassword} onChange={handleSettingsChange} placeholder="New Password" className="border p-2 rounded" />
+                </div>
+                <label className="inline-flex items-center mt-2">
+                  <input type="checkbox" checked={showPassword} onChange={() => setShowPassword(!showPassword)} className="mr-2" /> Show Passwords
+                </label>
+                <button onClick={handleChangePassword} className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Change Password</button>
+              </div>
+              <div>
+                <button onClick={logout} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Sign Out</button>
+              </div>
+              {settingsMsg && <div className="text-center text-green-600 font-semibold mt-2">{settingsMsg}</div>}
+            </div>
+          </div>
+        );
       default:
         return renderDashboardOverview();
     }
