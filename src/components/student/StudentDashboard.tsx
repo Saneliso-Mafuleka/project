@@ -145,17 +145,13 @@ export function StudentDashboard() {
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">Lessons</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {lessons.map((lesson, idx) => {
+              {lessons.slice(0, 2).map((lesson, idx) => {
                 // For the second card, use Lesson2.html title and file
-                // For the third card, use lesson3.html title and file
                 let lessonTitle = lesson.name;
                 let lessonUrl = lesson.url;
                 if (idx === 1) {
                   lessonTitle = 'Maths Farm: Pattern Detectives';
                   lessonUrl = '/lessons/Lesson2.html';
-                } else if (idx === 2) {
-                  lessonTitle = 'Foundation Phase Maths Fun! - Data Handling';
-                  lessonUrl = '/lessons/lesson3.html';
                 }
                 return (
                   <div key={lesson.id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
