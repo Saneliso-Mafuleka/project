@@ -144,37 +144,67 @@ export function StudentDashboard() {
           {/* Lessons Section */}
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">Lessons</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {lessons.slice(0, 2).map((lesson, idx) => {
-                // For the second card, use Lesson2.html title and file
-                let lessonTitle = lesson.name;
-                let lessonUrl = lesson.url;
-                if (idx === 1) {
-                  lessonTitle = 'Maths Farm: Pattern Detectives';
-                  lessonUrl = '/lessons/Lesson2.html';
-                }
-                return (
-                  <div key={lesson.id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                    <h4 className="font-semibold text-gray-900">{lessonTitle}</h4>
-                    <div className="mb-2">
-                      <span className="text-xs text-gray-500">Progress</span>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div
-                          className="h-2 rounded-full transition-all duration-300 bg-blue-500"
-                          style={{ width: `${lesson.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium text-gray-900">{lesson.progress}%</span>
-                    </div>
-                    <button
-                      onClick={() => setOpenLesson({ name: lessonTitle, url: lessonUrl })}
-                      className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Open
-                    </button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Lesson 1 */}
+              <div className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                <h4 className="font-semibold text-gray-900">Mathematics</h4>
+                <div className="mb-2">
+                  <span className="text-xs text-gray-500">Progress</span>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div
+                      className="h-2 rounded-full transition-all duration-300 bg-blue-500"
+                      style={{ width: `78%` }}
+                    />
                   </div>
-                );
-              })}
+                  <span className="text-xs font-medium text-gray-900">78%</span>
+                </div>
+                <button
+                  onClick={() => setOpenLesson({ name: 'Mathematics', url: '/lessons/lesson1.html' })}
+                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Open
+                </button>
+              </div>
+              {/* Lesson 2 */}
+              <div className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                <h4 className="font-semibold text-gray-900">Maths Farm: Pattern Detectives</h4>
+                <div className="mb-2">
+                  <span className="text-xs text-gray-500">Progress</span>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div
+                      className="h-2 rounded-full transition-all duration-300 bg-blue-500"
+                      style={{ width: `85%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-gray-900">85%</span>
+                </div>
+                <button
+                  onClick={() => setOpenLesson({ name: 'Maths Farm: Pattern Detectives', url: '/lessons/Lesson2.html' })}
+                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Open
+                </button>
+              </div>
+              {/* Lesson 3 */}
+              <div className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                <h4 className="font-semibold text-gray-900">Foundation Phase Maths Fun! - Data Handling</h4>
+                <div className="mb-2">
+                  <span className="text-xs text-gray-500">Progress</span>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div
+                      className="h-2 rounded-full transition-all duration-300 bg-blue-500"
+                      style={{ width: `72%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-gray-900">72%</span>
+                </div>
+                <button
+                  onClick={() => setOpenLesson({ name: 'Foundation Phase Maths Fun! - Data Handling', url: '/lessons/lesson3.html' })}
+                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Open
+                </button>
+              </div>
             </div>
           </div>
 
