@@ -1318,13 +1318,13 @@ export function TeacherDashboard() {
     // Class performance: average grade per class
     const classPerformance: { [className: string]: { count: number; avg: number } } = {};
     grades.forEach(g => {
-      // Find class for student (assume student name is unique)
-      const student = registeredStudents.find((s: any) => s.fullName === g.student);
-      const className = student?.className || 'Unassigned';
+      // No class grouping possible; all grades are 'Unassigned'
+      const className = 'Unassigned';
       if (!classPerformance[className]) classPerformance[className] = { count: 0, avg: 0 };
       classPerformance[className].count++;
       classPerformance[className].avg += g.grade;
     });
+    // To group by class, add a 'students' property to MathClass and assign students to classes.
     Object.keys(classPerformance).forEach(cn => {
       classPerformance[cn].avg = classPerformance[cn].count ? (classPerformance[cn].avg / classPerformance[cn].count) : 0;
     });
