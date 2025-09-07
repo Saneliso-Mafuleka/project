@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foundation Phase Maths Fun! - Data Handling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Comic Neue', cursive;
+        }
+        .activity-card {
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .activity-card:hover {
+            transform: translateY(-5px);
+        }
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background-color: #2ecc71; /* Emerald Green */
+        }
+        .btn-primary:hover {
+            background-color: #27ae60;
+        }
+        .btn-secondary {
+            background-color: #3498db; /* Peter River Blue */
+        }
+        .btn-secondary:hover {
+            background-color: #2980b9;
+        }
+         .btn-tertiary {
+            background-color: #e74c3c; /* Alizarin Red */
+        }
+        .btn-tertiary:hover {
+            background-color: #c0392b;
+        }
+        .object-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            min-height: 80px;
+            gap: 10px;
+            padding: 10px;
+            margin: 20px 0;
+            background-color: #ecf0f1;
+            border-radius: 15px;
+        }
+        .emoji {
+            font-size: 3rem;
+            transition: transform 0.5s ease;
+        }
+        .quiz-option {
+            border: 2px solid #bdc3c7;
+            border-radius: 15px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+        .quiz-option:hover {
+            background-color: #ecf0f1;
+            transform: scale(1.05);
+        }
+        .correct {
+            background-color: #2ecc71 !important;
+            color: white !important;
+            border-color: #27ae60 !important;
+        }
+        .incorrect {
+            background-color: #e74c3c !important;
+            color: white !important;
+            border-color: #c0392b !important;
+        }
+        .pictograph {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            height: 250px;
+            border-left: 5px solid #95a5a6;
+            border-bottom: 5px solid #95a5a6;
+            padding: 10px;
+        }
+        .pictograph-bar {
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+        }
+        .pictograph-bar .emoji {
+            font-size: 2.5rem;
+        }
+        .pictograph-bar .label {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-yellow-100 min-h-screen flex items-center justify-center p-4">
+
+    <main class="container mx-auto max-w-4xl">
+        <div id="lesson-container" class="activity-card text-center">
+            
+            <!-- Welcome Screen -->
+            <div id="welcome-screen">
+                <h1 class="text-5xl font-bold text-gray-800 mb-4">Hello, Data Detective!</h1>
+                <p class="text-xl text-gray-600 mb-8">Let's learn how to sort things and make cool picture graphs!</p>
+                <img src="https://placehold.co/400x200/FAD7A0/FFFFFF?text=Let's+Investigate!&font=comic-neue" alt="Happy cartoon animals with magnifying glasses" class="mx-auto rounded-lg mb-8">
+                <button id="start-btn" class="btn btn-primary text-2xl">Let's Start!</button>
+            </div>
+
+            <!-- Activity Sections will be dynamically shown here -->
+            <div id="activity-screen" class="hidden">
+                <!-- Navigation -->
+                <div class="flex justify-center flex-wrap gap-4 mb-8 border-b-2 pb-4">
+                    <button data-section="sorting" class="nav-btn btn btn-secondary">1. Sorting</button>
+                    <button data-section="graphing" class="nav-btn btn btn-secondary opacity-50" disabled>2. Making a Graph</button>
+                    <button data-section="reading" class="nav-btn btn btn-secondary opacity-50" disabled>3. Reading a Graph</button>
+                    <button data-section="quiz" class="nav-btn btn-tertiary opacity-50" disabled>4. Quiz Time!</button>
+                </div>
+
+                <!-- Sorting Section -->
+                <section id="sorting-section" class="activity-section">
+                    <h2 class="text-4xl font-bold text-gray-700 mb-4">Let's Sort the Fruit!</h2>
+                    <p class="text-lg text-gray-500 mb-6">All the fruits are mixed up. Can you help sort them into groups?</p>
+                    <div id="sorting-objects" class="object-container">
+                        <!-- Fruits will be generated here -->
+                    </div>
+                    <button id="sort-btn" class="btn btn-primary mt-4 text-2xl">Sort Them!</button>
+                     <p id="sort-feedback" class="text-2xl mt-4 font-bold h-8"></p>
+                    <button id="done-sorting-btn" class="btn btn-primary mt-8 hidden">Great sorting! Let's continue.</button>
+                </section>
+
+                <!-- Graphing Section -->
+                <section id="graphing-section" class="hidden activity-section">
+                    <h2 class="text-4xl font-bold text-gray-700 mb-4">Let's Make a Pictograph!</h2>
+                    <p class="text-lg text-gray-500 mb-6">Click on the animals to add them to our farm graph.</p>
+                    <div class="flex justify-center gap-6 my-6">
+                        <button class="add-animal-btn btn text-5xl bg-gray-200" data-animal="🐔">🐔</button>
+                        <button class="add-animal-btn btn text-5xl bg-gray-200" data-animal="🐷">🐷</button>
+                        <button class="add-animal-btn btn text-5xl bg-gray-200" data-animal="🐮">🐮</button>
+                    </div>
+                    <div id="graph-container" class="pictograph">
+                        <div class="pictograph-bar" id="bar-🐔"><div class="label">🐔</div></div>
+                        <div class="pictograph-bar" id="bar-🐷"><div class="label">🐷</div></div>
+                        <div class="pictograph-bar" id="bar-🐮"><div class="label">🐮</div></div>
+                    </div>
+                    <button id="done-graphing-btn" class="btn btn-primary mt-8">I'm done making my graph!</button>
+                </section>
+                
+                <!-- Reading a Graph Section -->
+                <section id="reading-section" class="hidden activity-section">
+                     <h2 class="text-4xl font-bold text-gray-700 mb-4">Reading Our Weather Graph</h2>
+                    <p class="text-lg text-gray-500 mb-6" id="reading-question">Which day was the most sunny? ☀️</p>
+                    <div id="reading-graph-container" class="pictograph">
+                        <div class="pictograph-bar" id="bar-☀️"><div class="emoji">☀️</div><div class="emoji">☀️</div><div class="emoji">☀️</div><div class="emoji">☀️</div><div class="label">Sunny</div></div>
+                        <div class="pictograph-bar" id="bar-☁️"><div class="emoji">☁️</div><div class="emoji">☁️</div><div class="label">Cloudy</div></div>
+                        <div class="pictograph-bar" id="bar-🌧️"><div class="emoji">🌧️</div><div class="label">Rainy</div></div>
+                    </div>
+                     <div id="reading-options" class="grid grid-cols-3 gap-4 max-w-sm mx-auto mt-8">
+                        <div class="quiz-option" data-answer="Sunny">☀️ Sunny</div>
+                        <div class="quiz-option" data-answer="Cloudy">☁️ Cloudy</div>
+                        <div class="quiz-option" data-answer="Rainy">🌧️ Rainy</div>
+                    </div>
+                    <p id="reading-feedback" class="text-2xl mt-4 font-bold h-8"></p>
+                    <button id="done-reading-btn" class="btn btn-primary mt-8">I'm ready for the quiz!</button>
+                </section>
+
+                <!-- Quiz Section -->
+                <section id="quiz-section" class="hidden activity-section">
+                    <h2 class="text-4xl font-bold text-gray-700 mb-4">Quiz Time!</h2>
+                    <p class="text-lg text-gray-500 mb-6" id="quiz-question"></p>
+                    <div id="quiz-display" class="object-container min-h-[120px] text-4xl"></div>
+                    <div id="quiz-options" class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-md mx-auto mt-4">
+                        <!-- Quiz options will be generated here -->
+                    </div>
+                    <p id="quiz-feedback" class="text-2xl mt-6 font-bold h-8"></p>
+                </section>
+
+                <!-- Final Score Section -->
+                <section id="score-section" class="hidden activity-section">
+                    <h2 class="text-4xl font-bold text-gray-700 mb-4">Super Detective!</h2>
+                    <img src="https://placehold.co/300x200/A5D6A7/FFFFFF?text=Well+Done!&font=comic-neue" alt="A gold star trophy" class="mx-auto rounded-lg mb-8">
+                    <p class="text-3xl text-gray-600 mb-8">You finished the quiz! Your score is:</p>
+                    <p id="final-score" class="text-7xl font-bold text-green-500 mb-8"></p>
+                    <button id="restart-btn" class="btn btn-primary text-2xl">Play Again</button>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Screen elements
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const activityScreen = document.getElementById('activity-screen');
+            const sections = document.querySelectorAll('.activity-section');
+            const navButtons = document.querySelectorAll('.nav-btn');
+
+            // --- NAVIGATION LOGIC ---
+            function showSection(sectionId) {
+                sections.forEach(sec => sec.classList.add('hidden'));
+                document.getElementById(`${sectionId}-section`).classList.remove('hidden');
+
+                navButtons.forEach(btn => {
+                    const isActive = btn.dataset.section === sectionId;
+                    const isTertiary = btn.classList.contains('btn-tertiary');
+                    if (isActive) {
+                         btn.style.backgroundColor = '#f39c12';
+                         btn.style.borderColor = '#f1c40f';
+                    } else if (!btn.disabled) {
+                        btn.style.backgroundColor = isTertiary ? '#e74c3c' : '#3498db';
+                    }
+                });
+            }
+            
+            function enableNav(sectionId) {
+                const btn = document.querySelector(`.nav-btn[data-section="${sectionId}"]`);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50');
+                }
+            }
+            
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => showSection(button.dataset.section));
+            });
+
+            document.getElementById('start-btn').addEventListener('click', () => {
+                welcomeScreen.classList.add('hidden');
+                activityScreen.classList.remove('hidden');
+                showSection('sorting');
+                generateFruits();
+            });
+
+            document.getElementById('done-sorting-btn').addEventListener('click', () => {
+                enableNav('graphing');
+                showSection('graphing');
+            });
+            document.getElementById('done-graphing-btn').addEventListener('click', () => {
+                enableNav('reading');
+                showSection('reading');
+            });
+            document.getElementById('done-reading-btn').addEventListener('click', () => {
+                enableNav('quiz');
+                showSection('quiz');
+                startQuiz();
+            });
+            document.getElementById('restart-btn').addEventListener('click', () => window.location.reload());
+
+            // --- SORTING ACTIVITY ---
+            const sortingObjects = document.getElementById('sorting-objects');
+            const sortBtn = document.getElementById('sort-btn');
+            const doneSortingBtn = document.getElementById('done-sorting-btn');
+            const sortFeedback = document.getElementById('sort-feedback');
+            const fruits = ['🍎', '🍌', '🍊', '🍇'];
+            let mixedFruits = [];
+
+            function generateFruits() {
+                mixedFruits = [];
+                for (let i = 0; i < 3; i++) mixedFruits.push('🍎');
+                for (let i = 0; i < 4; i++) mixedFruits.push('🍌');
+                for (let i = 0; i < 2; i++) mixedFruits.push('🍊');
+                for (let i = 0; i < 3; i++) mixedFruits.push('🍇');
+                mixedFruits.sort(() => Math.random() - 0.5); // Shuffle
+                renderFruits(mixedFruits);
+            }
+
+            function renderFruits(fruitArray) {
+                sortingObjects.innerHTML = '';
+                fruitArray.forEach(fruit => {
+                    const span = document.createElement('span');
+                    span.className = 'emoji';
+                    span.textContent = fruit;
+                    sortingObjects.appendChild(span);
+                });
+            }
+            
+            sortBtn.addEventListener('click', () => {
+                const sortedFruits = [...mixedFruits].sort();
+                renderFruits(sortedFruits);
+                sortFeedback.textContent = 'Awesome Sorting!';
+                sortFeedback.style.color = '#2ecc71';
+                sortBtn.classList.add('hidden');
+                doneSortingBtn.classList.remove('hidden');
+            });
+
+            // --- GRAPHING ACTIVITY ---
+            const addAnimalBtns = document.querySelectorAll('.add-animal-btn');
+            addAnimalBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const animal = btn.dataset.animal;
+                    const bar = document.getElementById(`bar-${animal}`);
+                    // Limit to 5 for neatness
+                    if (bar.childElementCount < 6) {
+                        const span = document.createElement('span');
+                        span.className = 'emoji';
+                        span.textContent = animal;
+                        bar.prepend(span); // Add to the bottom of the bar
+                    }
+                });
+            });
+
+            // --- READING GRAPH ACTIVITY ---
+            const readingOptions = document.querySelectorAll('#reading-options .quiz-option');
+            const readingFeedback = document.getElementById('reading-feedback');
+            const correctAnswer = "Sunny";
+            readingOptions.forEach(opt => {
+                opt.addEventListener('click', (e) => {
+                    if (e.target.dataset.answer === correctAnswer) {
+                        readingFeedback.textContent = 'That\'s right! The sunny bar is the tallest.';
+                        readingFeedback.style.color = '#2ecc71';
+                        e.target.classList.add('correct');
+                    } else {
+                        readingFeedback.textContent = 'Not quite, look for the tallest bar!';
+                        readingFeedback.style.color = '#e74c3c';
+                        e.target.classList.add('incorrect');
+                    }
+                });
+            });
+
+            // --- QUIZ LOGIC ---
+            const quizQuestionEl = document.getElementById('quiz-question');
+            const quizOptionsEl = document.getElementById('quiz-options');
+            const quizFeedbackEl = document.getElementById('quiz-feedback');
+            const quizDisplayEl = document.getElementById('quiz-display');
+            
+            const quizData = [
+                { q: 'Look at the vehicles. Which one is there the MOST of?', items: '🚗🚌🚗🚗🚲🚌', a: '🚗', o: ['🚗', '🚌', '🚲'] },
+                { q: 'Look at the pictograph. How many people chose 🐸?', items: { type: 'graph', data: {'🐸': 4, '🦊': 2, '🐻': 3} }, a: '4', o: ['2', '3', '4'] },
+                { q: 'Which has the LEAST?', items: '⚽️🏀🏀🏈', a: '🏈', o: ['⚽️', '🏀', '🏈'] },
+                { q: 'How many items are there in total?', items: '⭐🌙⭐🌙⭐', a: '5', o: ['3', '4', '5'] },
+            ];
+            let currentQuestionIndex = 0;
+            let score = 0;
+
+            function startQuiz() {
+                currentQuestionIndex = 0;
+                score = 0;
+                showQuizQuestion();
+            }
+
+            function showQuizQuestion() {
+                quizDisplayEl.innerHTML = '';
+                if (currentQuestionIndex >= quizData.length) {
+                    showFinalScore();
+                    return;
+                }
+                const question = quizData[currentQuestionIndex];
+                quizQuestionEl.textContent = question.q;
+
+                // Display items or graph
+                if(typeof question.items === 'string') {
+                    quizDisplayEl.textContent = question.items;
+                } else if (question.items.type === 'graph') {
+                    const graphDiv = document.createElement('div');
+                    graphDiv.className = 'pictograph h-[150px]';
+                    quizDisplayEl.appendChild(graphDiv);
+                    for(const [key, value] of Object.entries(question.items.data)){
+                        const bar = document.createElement('div');
+                        bar.className = 'pictograph-bar';
+                        bar.innerHTML += `<div class="label">${key}</div>`;
+                        for(let i=0; i<value; i++){
+                            bar.innerHTML = `<div class="emoji !text-2xl">${key}</div>` + bar.innerHTML;
+                        }
+                        graphDiv.appendChild(bar);
+                    }
+                }
+
+                quizOptionsEl.innerHTML = '';
+                question.o.sort(() => Math.random() - 0.5).forEach(option => {
+                    const button = document.createElement('div');
+                    button.textContent = option;
+                    button.className = 'quiz-option';
+                    button.onclick = () => checkQuizAnswer(option, question.a, button);
+                    quizOptionsEl.appendChild(button);
+                });
+                quizFeedbackEl.textContent = '';
+            }
+            
+            function checkQuizAnswer(selected, correct, element) {
+                if (String(selected) === String(correct)) {
+                    score++;
+                    quizFeedbackEl.textContent = 'Correct!';
+                    quizFeedbackEl.style.color = '#2ecc71';
+                    element.classList.add('correct');
+                } else {
+                    quizFeedbackEl.textContent = `Oops! The correct answer was ${correct}.`;
+                    quizFeedbackEl.style.color = '#e74c3c';
+                    element.classList.add('incorrect');
+                }
+                quizOptionsEl.querySelectorAll('.quiz-option').forEach(opt => opt.onclick = null);
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    showQuizQuestion();
+                }, 2000);
+            }
+
+            function showFinalScore() {
+                showSection('score');
+                document.getElementById('final-score').textContent = `${score} / ${quizData.length}`;
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maths Farm: Pattern Detectives</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Chewy&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #EFF6FF; /* Light Blue Background */
+        }
+        .chewy-font {
+            font-family: 'Chewy', cursive;
+        }
+        /* Custom styles for the detective theme */
+        .detective-container {
+            background-color: #FEFCE8; /* Creamy Yellow */
+            border: 4px solid #3B82F6; /* Blue Border */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .btn-detective {
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .btn-detective:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .quiz-card {
+            border: 3px dashed #93C5FD; /* Lighter Blue Dashed */
+            background-color: #ffffff;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .quiz-card:hover {
+             transform: scale(1.05);
+             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .correct-answer {
+            background-color: #22C55E !important; /* Green */
+            color: white;
+            border-color: #16A34A !important;
+        }
+        .wrong-answer {
+            background-color: #EF4444 !important; /* Red */
+            color: white;
+            border-color: #B91C1C !important;
+        }
+        .lesson-card {
+            background-color: #E0E7FF; /* Indigo-100 */
+            border-left: 6px solid #6366F1; /* Indigo-500 */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="app-container" class="w-full max-w-3xl mx-auto">
+
+        <!-- Intro Section -->
+        <div id="intro-section" class="detective-container rounded-2xl p-6 md:p-8 text-center">
+            <h1 class="chewy-font text-4xl md:text-5xl text-blue-800">Become a Pattern Detective! 🕵️‍♀️</h1>
+            <p class="mt-4 text-lg text-gray-700">
+                There are mysterious patterns all over the farm! We need a super detective like you to find them. Are you ready for your first mission?
+            </p>
+            <img src="https://placehold.co/600x300/93C5FD/1E40AF?text=Your+Mission:+Find+the+Patterns!" alt="A magnifying glass over farm-themed icons like a tractor and a chicken." class="my-6 rounded-xl shadow-md w-full">
+            <button id="start-btn" class="btn-detective chewy-font bg-yellow-500 text-white text-2xl py-3 px-8 rounded-full shadow-lg hover:bg-yellow-600">
+                Accept Mission!
+            </button>
+        </div>
+
+        <!-- Lesson & Quiz Section (Initially Hidden) -->
+        <div id="lesson-section" class="detective-container rounded-2xl p-6 md:p-8 hidden">
+             <div class="mb-6">
+                 <p class="text-gray-600 text-lg text-center">Mission Progress</p>
+                 <div class="w-full bg-blue-100 rounded-full h-4 mt-2 border border-blue-200">
+                    <div id="progress-bar" class="bg-yellow-400 h-full rounded-full transition-all duration-500 ease-in-out"></div>
+                 </div>
+            </div>
+
+            <div id="content-area">
+                <!-- Content will be changed by JavaScript -->
+            </div>
+
+            <div id="feedback-section" class="mt-4 text-center p-4 rounded-lg min-h-[50px]">
+                 <p id="feedback-text" class="font-semibold text-xl"></p>
+            </div>
+
+            <div class="mt-6 flex justify-center">
+                <button id="next-btn" class="btn-detective chewy-font bg-blue-500 text-white text-xl py-2 px-10 rounded-full shadow-lg hover:bg-blue-600 hidden">
+                    Next Clue
+                </button>
+            </div>
+        </div>
+        
+        <!-- Completion Section (Initially Hidden) -->
+        <div id="completion-section" class="detective-container rounded-2xl p-6 md:p-8 text-center hidden">
+             <h2 class="chewy-font text-4xl text-blue-800">Mission Accomplished! 🏆</h2>
+             <img src="https://placehold.co/200x200/FBBF24/9A3412?text=🏅" alt="A gold medal." class="my-6 rounded-full shadow-md w-32 h-32 mx-auto">
+             <p class="text-xl text-gray-700 mb-4">You solved all the pattern puzzles on the farm. You are a Master Pattern Detective!</p>
+             <button id="restart-btn" class="btn-detective chewy-font bg-yellow-500 text-white text-2xl py-3 px-8 rounded-full shadow-lg hover:bg-yellow-600">
+                New Mission
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const lessonData = [
+            {
+                type: 'learn',
+                title: 'Case File #1: The Repeating Animals',
+                description: 'A pattern is something that repeats over and over. Your first clue is this line of animals. Look closely at how they repeat.',
+                imageUrl: 'https://placehold.co/600x200/BFDBFE/1E40AF?text=🐔+🐷+🐔+🐷+🐔+🐷'
+            },
+            {
+                type: 'quiz',
+                question: 'Look at the pattern: 🐑 🌽 🐑 🌽 🐑 ___. What comes next?',
+                correctAnswer: '🌽',
+                options: [
+                    { name: '🐑', imageUrl: 'https://placehold.co/150x150/F3F4F6/FFFFFF?text=🐑' },
+                    { name: '🌽', imageUrl: 'https://placehold.co/150x150/FACC15/FFFFFF?text=🌽' },
+                    { name: '🐮', imageUrl: 'https://placehold.co/150x150/A78BFA/FFFFFF?text=🐮' }
+                ]
+            },
+            {
+                type: 'learn',
+                title: 'Case File #2: The Growing Sunflowers',
+                description: 'Some patterns don\'t just repeat, they GROW! Farmer Thabo plants 1 sunflower, then 2, then 3. See how the pattern grows by one each time?',
+                imageUrl: 'https://placehold.co/600x200/D1FAE5/059669?text=1🌻,+2🌻🌻,+3🌻🌻🌻'
+            },
+            {
+                type: 'quiz',
+                question: 'If the pattern is 1 🥕, 2 🥕🥕, 3 🥕🥕🥕... How many carrots will be in the next row?',
+                correctAnswer: '4',
+                options: [
+                    { name: '3', imageUrl: 'https://placehold.co/150x150/FDBA74/FFFFFF?text=3' },
+                    { name: '5', imageUrl: 'https://placehold.co/150x150/FDBA74/FFFFFF?text=5' },
+                    { name: '4', imageUrl: 'https://placehold.co/150x150/FDBA74/FFFFFF?text=4' }
+                ]
+            },
+            {
+                type: 'learn',
+                title: 'Case File #3: Cracking Number Codes',
+                description: 'Detectives also find patterns in numbers! The farmer collects eggs in groups of 10. Let\'s count in 10s: 10, 20, 30, 40!',
+                imageUrl: 'https://placehold.co/600x200/FEF9C3/CA8A04?text=10,+20,+30,+40'
+            },
+            {
+                type: 'quiz',
+                question: 'What is the missing number in this code? 2, 4, 6, ___, 10',
+                correctAnswer: '8',
+                options: [
+                    { name: '7', imageUrl: 'https://placehold.co/150x150/E0E7FF/FFFFFF?text=7' },
+                    { name: '8', imageUrl: 'https://placehold.co/150x150/E0E7FF/FFFFFF?text=8' },
+                    { name: '9', imageUrl: 'https://placehold.co/150x150/E0E7FF/FFFFFF?text=9' }
+                ]
+            }
+        ];
+
+        // State
+        let currentStepIndex = 0;
+
+        // Element References
+        const introSection = document.getElementById('intro-section');
+        const lessonSection = document.getElementById('lesson-section');
+        const completionSection = document.getElementById('completion-section');
+        
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+
+        const contentArea = document.getElementById('content-area');
+        const feedbackText = document.getElementById('feedback-text');
+        const progressBar = document.getElementById('progress-bar');
+        
+
+        function startLesson() {
+            introSection.classList.add('hidden');
+            lessonSection.classList.remove('hidden');
+            completionSection.classList.add('hidden');
+            currentStepIndex = 0;
+            displayStep();
+        }
+
+        function displayStep() {
+            resetStep();
+            const currentStep = lessonData[currentStepIndex];
+            
+            progressBar.style.width = `${((currentStepIndex) / lessonData.length) * 100}%`;
+
+            if (currentStep.type === 'learn') {
+                contentArea.innerHTML = `
+                    <div class="lesson-card p-6 rounded-lg text-center">
+                        <h2 class="chewy-font text-3xl text-gray-800 mb-4">${currentStep.title}</h2>
+                        <p class="text-lg text-gray-700 mb-4">${currentStep.description}</p>
+                        <img src="${currentStep.imageUrl}" alt="${currentStep.title}" class="mx-auto my-4 rounded-lg shadow-md">
+                    </div>
+                `;
+                nextBtn.classList.remove('hidden');
+
+            } else if (currentStep.type === 'quiz') {
+                let optionsHTML = '<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">';
+                currentStep.options.forEach(option => {
+                    optionsHTML += `
+                        <div class="quiz-card rounded-xl p-4 text-center" onclick="checkAnswer('${option.name}', this)">
+                            <img src="${option.imageUrl}" alt="${option.name}" class="mx-auto h-24 object-contain">
+                            <p class="mt-2 text-2xl font-bold">${option.name}</p>
+                        </div>
+                    `;
+                });
+                optionsHTML += '</div>';
+
+                contentArea.innerHTML = `
+                    <h2 class="chewy-font text-3xl text-blue-800 mb-4 text-center">${currentStep.question}</h2>
+                    ${optionsHTML}
+                `;
+                 nextBtn.classList.add('hidden');
+            }
+        }
+        
+        function resetStep() {
+            feedbackText.textContent = '';
+            contentArea.innerHTML = '';
+            nextBtn.textContent = "Next Clue";
+        }
+
+        function checkAnswer(selectedOption, cardElement) {
+            const currentStep = lessonData[currentStepIndex];
+            const allCards = cardElement.parentElement.children;
+
+            for (let card of allCards) {
+                card.onclick = null;
+                card.style.cursor = 'not-allowed';
+            }
+
+            if (selectedOption === currentStep.correctAnswer) {
+                feedbackText.textContent = 'Correct! 🎉 You found the clue!';
+                feedbackText.style.color = '#16A34A';
+                cardElement.classList.add('correct-answer');
+            } else {
+                feedbackText.textContent = 'Not quite, that\'s a tricky one!';
+                feedbackText.style.color = '#B91C1C';
+                cardElement.classList.add('wrong-answer');
+            }
+            
+            if(currentStepIndex === lessonData.length - 1) {
+                nextBtn.textContent = "Finish Mission!";
+            }
+            nextBtn.classList.remove('hidden');
+        }
+
+
+        function showNextStep() {
+            currentStepIndex++;
+            if (currentStepIndex < lessonData.length) {
+                displayStep();
+            } else {
+                showCompletion();
+            }
+        }
+        
+        function showCompletion() {
+            progressBar.style.width = '100%';
+            setTimeout(() => {
+                lessonSection.classList.add('hidden');
+                completionSection.classList.remove('hidden');
+            }, 500); // Small delay to show progress bar at 100%
+        }
+
+        // Event Listeners
+        startBtn.addEventListener('click', startLesson);
+        nextBtn.addEventListener('click', showNextStep);
+        restartBtn.addEventListener('click', startLesson);
+
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maths Farm Adventure Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Chewy&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F0FDF4; /* Light Green Background */
+        }
+        .chewy-font {
+            font-family: 'Chewy', cursive;
+        }
+        /* Custom styles for the farm theme */
+        .farm-container {
+            background-color: #FEFCE8; /* Creamy Yellow */
+            border: 4px solid #84CC16; /* Lime Green Border */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .btn-farm {
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .btn-farm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .option-btn {
+            border: 2px solid #A3E635; /* Lighter Lime */
+            background-color: #ffffff;
+        }
+        .option-btn:hover:not(:disabled) {
+             background-color: #ECFCCB; /* Very light lime on hover */
+        }
+        .option-btn:disabled {
+            cursor: not-allowed;
+        }
+        .correct-answer {
+            background-color: #84CC16 !important; /* Lime Green */
+            color: white;
+            border-color: #65A30D !important;
+        }
+        .wrong-answer {
+            background-color: #EF4444 !important; /* Red */
+            color: white;
+            border-color: #B91C1C !important;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="app-container" class="w-full max-w-2xl mx-auto">
+
+        <!-- Story Section -->
+        <div id="story-section" class="farm-container rounded-2xl p-6 md:p-8 text-center">
+            <h1 class="chewy-font text-4xl md:text-5xl text-yellow-900">Welcome to the Maths Farm! 🌽🚜</h1>
+            <p class="mt-4 text-lg text-gray-700">
+                Hello, clever learner! Today, we are going on an adventure to help Farmer Thabo. We need to use our super maths skills to solve some puzzles on his farm. Are you ready? Let's go!
+            </p>
+            <img src="https://placehold.co/600x300/A3E635/4D7C0F?text=Friendly+Farm+Scene" alt="A cartoon farm scene with a barn, tractor, and animals." class="my-6 rounded-xl shadow-md w-full">
+            <button id="start-quiz-btn" class="btn-farm chewy-font bg-orange-500 text-white text-2xl py-3 px-8 rounded-full shadow-lg hover:bg-orange-600">
+                Start the Adventure!
+            </button>
+        </div>
+
+        <!-- Quiz Section (Initially Hidden) -->
+        <div id="quiz-section" class="farm-container rounded-2xl p-6 md:p-8 hidden">
+            <div id="quiz-header" class="text-center mb-6">
+                 <p class="text-gray-600 text-lg">Question <span id="question-number">1</span> of <span id="total-questions">10</span></p>
+                 <div class="w-full bg-gray-200 rounded-full h-4 mt-2">
+                    <div id="progress-bar" class="bg-lime-500 h-4 rounded-full" style="width: 10%"></div>
+                 </div>
+            </div>
+
+            <h2 id="question-text" class="text-2xl font-bold text-gray-800 mb-6 text-center"></h2>
+            
+            <div id="answer-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- Answer buttons will be dynamically inserted here -->
+            </div>
+
+            <div id="feedback-section" class="mt-4 text-center p-4 rounded-lg min-h-[80px]">
+                 <p id="feedback-text" class="font-semibold"></p>
+                 <p id="rationale-text" class="text-sm"></p>
+            </div>
+
+            <div class="mt-6 flex justify-center">
+                <button id="next-btn" class="btn-farm chewy-font bg-blue-500 text-white text-xl py-2 px-10 rounded-full shadow-lg hover:bg-blue-600 hidden">
+                    Next
+                </button>
+            </div>
+        </div>
+        
+        <!-- Score Section (Initially Hidden) -->
+        <div id="score-section" class="farm-container rounded-2xl p-6 md:p-8 text-center hidden">
+             <h2 class="chewy-font text-4xl text-yellow-900">Well Done!</h2>
+             <img src="https://placehold.co/200x200/FEF08A/F59E0B?text=🌟" alt="A gold star." class="my-6 rounded-full shadow-md w-32 h-32 mx-auto">
+             <p class="text-xl text-gray-700 mb-4">You finished the Maths Farm Adventure!</p>
+             <p class="text-3xl font-bold text-lime-600 mb-6">Your score is <span id="final-score">0</span> out of <span id="total-score">10</span>.</p>
+             <button id="restart-btn" class="btn-farm chewy-font bg-orange-500 text-white text-2xl py-3 px-8 rounded-full shadow-lg hover:bg-orange-600">
+                Play Again!
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                question: "Look at the animals in the field. How many chickens 🐔 can you count?",
+                hint: "Point to each chicken and say the number name as you count.",
+                answers: [
+                    { text: "3", isCorrect: false, rationale: "This is the number of pigs, not chickens. Count the chickens carefully." },
+                    { text: "4", isCorrect: false, rationale: "This is the number of cows. Look for the animals with feathers and beaks." },
+                    { text: "5", isCorrect: true, rationale: "By counting each chicken individually (1, 2, 3, 4, 5), you arrive at the correct total." },
+                    { text: "2", isCorrect: false, rationale: "There are more than 2 chickens in the picture. Try counting them all." }
+                ]
+            },
+            {
+                question: "Farmer Thabo has 3 pigs 🐷. Then, 2 more pigs come to join them. How many pigs are there altogether now?",
+                hint: "This is an 'adding on' sum. Start with 3 and count on two more numbers.",
+                answers: [
+                    { text: "3", isCorrect: false, rationale: "This is the number of pigs he started with, before more pigs joined." },
+                    { text: "2", isCorrect: false, rationale: "This is the number of new pigs that arrived, not the total number." },
+                    { text: "5", isCorrect: true, rationale: "Starting with 3 pigs and adding 2 more gives a total of 5. $3 + 2 = 5$." },
+                    { text: "1", isCorrect: false, rationale: "When more animals join a group, the total number gets bigger, not smaller." }
+                ]
+            },
+            {
+                question: "There are 4 cows 🐮 in the field. 1 cow goes into the barn for a nap. How many cows are left in the field?",
+                hint: "This is a 'taking away' sum. You start with 4 and count back one.",
+                answers: [
+                    { text: "5", isCorrect: false, rationale: "When an animal leaves, you subtract. Adding would give you this answer." },
+                    { text: "3", isCorrect: true, rationale: "Starting with 4 cows and taking 1 away leaves 3 cows. $4 - 1 = 3$." },
+                    { text: "4", isCorrect: false, rationale: "This is the number of cows before one of them went away for a nap." },
+                    { text: "1", isCorrect: false, rationale: "This is the number of cows that left, not the number of cows remaining." }
+                ]
+            },
+            {
+                question: "The fence has a pattern: short post, tall post, short post, tall post... What kind of post should come next?",
+                hint: "Say the pattern out loud to yourself and listen for what comes after 'tall'.",
+                answers: [
+                    { text: "A tall post", isCorrect: false, rationale: "The last post was a tall one, so the pattern continues with a short one after that." },
+                    { text: "A short post", isCorrect: true, rationale: "The pattern alternates between short and tall. After a tall post, the next one is short." },
+                    { text: "A gate", isCorrect: false, rationale: "A gate is part of a fence, but it does not follow the repeating 'short, tall' pattern." },
+                    { text: "A round post", isCorrect: false, rationale: "The pattern is about the height of the posts, not their shape." }
+                ]
+            },
+            {
+                question: "Farmer Thabo plants mielies in a pattern. He plants 2 seeds, then 4, then 6. How many seeds will he plant in the next row?",
+                hint: "Think about what you are adding each time to get from one number to the next.",
+                answers: [
+                    { text: "7", isCorrect: false, rationale: "This pattern involves skip counting, not just counting by one." },
+                    { text: "10", isCorrect: false, rationale: "This number would come after 8 in this pattern. What is the very next number?" },
+                    { text: "8", isCorrect: true, rationale: "The pattern is counting in 2s (2, 4, 6...). The next number in this sequence is 8." },
+                    { text: "6", isCorrect: false, rationale: "This is the last number in the pattern shown, not the next one." }
+                ]
+            },
+            {
+                question: "Farmer Thabo is building a barn. What 3-sided shape is he using for the roof?",
+                hint: "Count the number of sides on a roof. It looks like a slice of pizza!",
+                answers: [
+                    { text: "Square", isCorrect: false, rationale: "A square has 4 equal sides, not 3." },
+                    { text: "Circle", isCorrect: false, rationale: "A circle is round and has no straight sides or corners." },
+                    { text: "Triangle", isCorrect: true, rationale: "A triangle is a shape that is defined by having exactly 3 sides and 3 corners." },
+                    { text: "Rectangle", isCorrect: false, rationale: "A rectangle has 4 sides, not 3." }
+                ]
+            },
+            {
+                question: "The window on the barn has 4 sides that are all the exact same length. What shape is it?",
+                hint: "Look for a shape that looks like a perfect box.",
+                answers: [
+                    { text: "Rectangle", isCorrect: false, rationale: "A rectangle has 4 sides, but two are long and two are short, not all the same." },
+                    { text: "Square", isCorrect: true, rationale: "A square is a special shape that has 4 sides that are all equal in length." },
+                    { text: "Triangle", isCorrect: false, rationale: "A triangle only has 3 sides, not 4." },
+                    { text: "Circle", isCorrect: false, rationale: "A circle is round and does not have any straight sides." }
+                ]
+            },
+            {
+                question: "The farmer is carrying a big bag of potatoes and a small box of eggs. Which item would be heavier to lift?",
+                hint: "Think about which object is bigger and has more stuff inside it.",
+                answers: [
+                    { text: "The box of eggs", isCorrect: false, rationale: "Eggs are small and light. A big bag of potatoes would be much more difficult to lift." },
+                    { text: "The bag of potatoes", isCorrect: true, rationale: "A big bag filled with many potatoes has more mass and is therefore heavier than a small box of eggs." },
+                    { text: "They weigh the same", isCorrect: false, rationale: "A big bag and a small box are different sizes and are unlikely to weigh the same." },
+                    { text: "The farmer", isCorrect: false, rationale: "The question asks to compare the two items the farmer is carrying, not the farmer himself." }
+                ]
+            },
+            {
+                question: "What time of day is it when the sun rises and the farmer wakes up to milk the cows?",
+                hint: "This is when you wake up and get ready for your day.",
+                answers: [
+                    { text: "In the morning", isCorrect: true, rationale: "The morning is the start of the day, which is when the sun rises." },
+                    { text: "In the afternoon", isCorrect: false, rationale: "The afternoon is the middle of the day, when the sun is high in the sky." },
+                    { text: "At night", isCorrect: false, rationale: "At night, the sun has set and the moon is out. This is when the farmer is sleeping." },
+                    { text: "At lunchtime", isCorrect: false, rationale: "Lunchtime is around the middle of the day, long after the sun has risen." }
+                ]
+            },
+            {
+                question: "Farmer Thabo made a graph of children's favourite animals. Which animal did the most children choose?<br><br>Sheep 🐑: 🐑 🐑 🐑 🐑 🐑<br>Pig 🐷: 🐷 🐷 🐷<br>Chicken 🐔: 🐔 🐔 🐔 🐔",
+                hint: "Look for the animal that has the longest row of pictures next to its name.",
+                answers: [
+                    { text: "Pig", isCorrect: false, rationale: "The pig has 3 pictures, which is less than the sheep and the chicken." },
+                    { text: "Chicken", isCorrect: false, rationale: "The chicken has 4 pictures. Look for the animal with even more pictures." },
+                    { text: "Sheep", isCorrect: true, rationale: "The sheep has 5 pictures, which is more than any other animal, making it the most popular." },
+                    { text: "Cow", isCorrect: false, rationale: "The cow is not one of the options on this particular graph." }
+                ]
+            }
+        ];
+
+        // Quiz State
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        // Element References
+        const storySection = document.getElementById('story-section');
+        const quizSection = document.getElementById('quiz-section');
+        const scoreSection = document.getElementById('score-section');
+        
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+
+        const questionText = document.getElementById('question-text');
+        const answerOptionsContainer = document.getElementById('answer-options');
+        const feedbackText = document.getElementById('feedback-text');
+        const rationaleText = document.getElementById('rationale-text');
+        
+        const questionNumberEl = document.getElementById('question-number');
+        const totalQuestionsEl = document.getElementById('total-questions');
+        const progressBar = document.getElementById('progress-bar');
+        const finalScoreEl = document.getElementById('final-score');
+        const totalScoreEl = document.getElementById('total-score');
+        
+
+        function startQuiz() {
+            storySection.classList.add('hidden');
+            quizSection.classList.remove('hidden');
+            scoreSection.classList.add('hidden');
+            currentQuestionIndex = 0;
+            score = 0;
+            totalQuestionsEl.textContent = quizData.length;
+            totalScoreEl.textContent = quizData.length;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionText.innerHTML = currentQuestion.question; // Use innerHTML to render emojis and line breaks
+            questionNumberEl.textContent = currentQuestionIndex + 1;
+            progressBar.style.width = `${((currentQuestionIndex + 1) / quizData.length) * 100}%`;
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('option-btn', 'btn-farm', 'text-lg', 'font-semibold', 'p-4', 'rounded-xl', 'w-full', 'text-left');
+                button.addEventListener('click', () => selectAnswer(button, answer));
+                answerOptionsContainer.appendChild(button);
+            });
+        }
+        
+        function resetState() {
+            nextBtn.classList.add('hidden');
+            feedbackText.textContent = '';
+            rationaleText.textContent = '';
+            document.getElementById('feedback-section').style.backgroundColor = 'transparent';
+            while(answerOptionsContainer.firstChild) {
+                answerOptionsContainer.removeChild(answerOptionsContainer.firstChild);
+            }
+        }
+
+        function selectAnswer(button, answer) {
+            if (answer.isCorrect) {
+                feedbackText.textContent = 'Correct! 🎉';
+                rationaleText.textContent = answer.rationale;
+                document.getElementById('feedback-section').style.backgroundColor = '#D9F99D'; // Light lime
+                button.classList.add('correct-answer');
+                score++;
+            } else {
+                feedbackText.textContent = 'Not quite...';
+                rationaleText.textContent = answer.rationale;
+                document.getElementById('feedback-section').style.backgroundColor = '#FECDD3'; // Light red
+                button.classList.add('wrong-answer');
+
+                // Highlight the correct answer
+                const correctButton = Array.from(answerOptionsContainer.children).find(btn => {
+                    const btnAnswer = quizData[currentQuestionIndex].answers.find(a => a.text === btn.innerText);
+                    return btnAnswer.isCorrect;
+                });
+                correctButton.classList.add('correct-answer');
+            }
+
+            // Disable all buttons after an answer is chosen
+            Array.from(answerOptionsContainer.children).forEach(btn => {
+                btn.disabled = true;
+            });
+            
+            nextBtn.classList.remove('hidden');
+        }
+
+        function showNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                showQuestion();
+            } else {
+                showScore();
+            }
+        }
+        
+        function showScore() {
+            quizSection.classList.add('hidden');
+            scoreSection.classList.remove('hidden');
+            finalScoreEl.textContent = score;
+        }
+
+        // Event Listeners
+        startQuizBtn.addEventListener('click', startQuiz);
+        nextBtn.addEventListener('click', showNextQuestion);
+        restartBtn.addEventListener('click', startQuiz);
+
+    </script>
+</body>
+</html>

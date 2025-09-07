@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, Clock, TrendingUp, Calendar, AlertCircle, CheckCircle, Award, Play, ExternalLink, Search, Bookmark, Download } from 'lucide-react';
 import { mockCourses, mockAssignments, mockSchedule } from '../../lib/studentData';
 import { LearningMaterial } from '../../types/learningMaterials';
 import { learningMaterialsService } from '../../lib/learningMaterialsService';
 import { MaterialViewer } from '../common/MaterialViewer';
-import { useState, useEffect } from 'react';
+
+const lessons = [
+  { id: '1', name: 'Mathematics', url: '/lessons/lesson1.html', progress: 78 },
+  { id: '2', name: 'English Literature', url: '/lessons/lesson2.html', progress: 85 },
+  { id: '3', name: 'Science', url: '/lessons/lesson3.html', progress: 72 },
+  { id: '4', name: 'History', url: '/lessons/lesson4.html', progress: 90 },
+];
 
 export function StudentDashboard() {
   const [availableMaterials, setAvailableMaterials] = useState<LearningMaterial[]>([]);
@@ -12,6 +18,7 @@ export function StudentDashboard() {
   const [materialsLoading, setMaterialsLoading] = useState(true);
   const [materialSearch, setMaterialSearch] = useState('');
   const [selectedMaterialType, setSelectedMaterialType] = useState('');
+  const [openLesson, setOpenLesson] = useState<{ name: string; url: string } | null>(null);
 
   const todaySchedule = mockSchedule.filter(item => item.day === 'Monday').slice(0, 3);
   const upcomingAssignments = mockAssignments.filter(a => a.status === 'pending').slice(0, 3);
@@ -134,48 +141,44 @@ export function StudentDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Current Courses */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Lessons Section */}
           <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">My Courses</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Lessons</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {mockCourses.map((course) => (
-                <div key={course.id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: course.color }}
-                      />
-                      <div>
-                        <h4 className="font-semibold text-gray-900">{course.name}</h4>
-                        <p className="text-sm text-gray-500">{course.teacher}</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between mb-1">
+              {lessons.map((lesson, idx) => {
+                // For the second card, use Lesson2.html title and file
+                // For the third card, use lesson3.html title and file
+                let lessonTitle = lesson.name;
+                let lessonUrl = lesson.url;
+                if (idx === 1) {
+                  lessonTitle = 'Maths Farm: Pattern Detectives';
+                  lessonUrl = '/lessons/Lesson2.html';
+                } else if (idx === 2) {
+                  lessonTitle = 'Foundation Phase Maths Fun! - Data Handling';
+                  lessonUrl = '/lessons/lesson3.html';
+                }
+                return (
+                  <div key={lesson.id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                    <h4 className="font-semibold text-gray-900">{lessonTitle}</h4>
+                    <div className="mb-2">
                       <span className="text-xs text-gray-500">Progress</span>
-                      <span className="text-xs font-medium text-gray-900">{course.progress}%</span>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div
+                          className="h-2 rounded-full transition-all duration-300 bg-blue-500"
+                          style={{ width: `${lesson.progress}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-gray-900">{lesson.progress}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="h-2 rounded-full transition-all duration-300"
-                        style={{ 
-                          width: `${course.progress}%`,
-                          backgroundColor: course.color 
-                        }}
-                      />
-                    </div>
+                    <button
+                      onClick={() => setOpenLesson({ name: lessonTitle, url: lessonUrl })}
+                      className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Open
+                    </button>
                   </div>
-
-                  {course.nextClass && (
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <Clock className="w-3 h-3" />
-                      <span>Next: {course.nextClass}</span>
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -433,8 +436,80 @@ export function StudentDashboard() {
         </div>
       </div>
 
+      {/* Lessons Section */}
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 className="text-xl font-bold text-gray-900 mb-6">Lessons</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {lessons.map((lesson) => (
+            <div key={lesson.id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+              <h4 className="font-semibold text-gray-900">{lesson.name}</h4>
+              <div className="mb-2">
+                <span className="text-xs text-gray-500">Progress</span>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                  <div
+                    className="h-2 rounded-full transition-all duration-300 bg-blue-500"
+                    style={{ width: `${lesson.progress}%` }}
+                  />
+                </div>
+                <span className="text-xs font-medium text-gray-900">{lesson.progress}%</span>
+              </div>
+              <button
+                onClick={() => setOpenLesson({ name: lesson.name, url: lesson.url })}
+                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Open
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Lesson Popup */}
+      {openLesson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-3xl relative">
+            <button
+              onClick={() => setOpenLesson(null)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl"
+            >
+              &times;
+            </button>
+            <h3 className="text-lg font-bold mb-2">{openLesson.name}</h3>
+            <iframe
+              src={openLesson.url}
+              title={openLesson.name}
+              width="100%"
+              height="500"
+              className="rounded border"
+            ></iframe>
+          </div>
+        </div>
+      )}
+
       {/* Material Viewer Modal */}
-      {viewingMaterial && (
+      {/* Lesson Popup (iframe) */}
+      {openLesson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-3xl relative">
+            <button
+              onClick={() => setOpenLesson(null)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl"
+            >
+              &times;
+            </button>
+            <h3 className="text-lg font-bold mb-2">{openLesson.name}</h3>
+            <iframe
+              src={openLesson.url}
+              title={openLesson.name}
+              width="100%"
+              height="500"
+              className="rounded border"
+            ></iframe>
+          </div>
+        </div>
+      )}
+      {/* Fallback for other material types */}
+      {viewingMaterial && viewingMaterial.type !== 'lesson' && (
         <MaterialViewer
           material={viewingMaterial}
           onClose={() => setViewingMaterial(null)}
